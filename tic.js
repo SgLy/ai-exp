@@ -4,15 +4,17 @@ var table_cell = [];
 var finished = false;
 
 var Chess = {
-  CROSS: 0,
-  CIRCLE: 1,
+  BLUE: 0,
+  RED: 1,
   EMPTY: 2
 }
 Object.freeze(Chess);
 var css_class = ['blue moon', 'red sun'];
 Object.freeze(css_class);
+var css_color = ['#2185d0', '#db2828'];
+Object.freeze(css_color);
 
-var turn = Chess.CROSS;
+var turn = Chess.BLUE;
 
 function Map()
 {
@@ -84,6 +86,10 @@ function init()
           duration: 200
         });
         round++;
+        label = $('<p>' + round + '</p>').css({
+          color: css_color[turn]
+        });
+        $(this).append(label);
         putChess($(this).data('x'), $(this).data('y'), turn);
         if (!finished) {
           $('h2>i').removeClass(css_class[turn]);
@@ -94,7 +100,7 @@ function init()
     });
 
   $('h2>i').addClass(css_class[turn]);
-} 
+}
 
 function putChess(x, y, chess)
 {
@@ -130,16 +136,16 @@ function finish(winner, win_position)
 {
   finished = true;
   $('h2').html('Finished');
-  if (winner == Chess.CROSS) {
+  if (winner == Chess.BLUE) {
     $('h1').addClass('blue');
     $('h1').html('<i class="' + css_class[winner] +' icon"></i>Win!');
-  } else if (winner == Chess.CIRCLE) {
+  } else if (winner == Chess.RED) {
     $('h1').addClass('red');
     $('h1').html('<i class="' + css_class[winner] +' icon"></i>Win!');
   } else if (winner == Chess.EMPTY) {
     $('h1').text('Draw!');
   }
-  
+
   $('td').css({
     boxShadow: 'none'
   });
@@ -155,11 +161,11 @@ function finish(winner, win_position)
       else
         pos = [[0, 2], [1, 1], [2, 0]];
     }
-    color = (winner == Chess.CROSS) ? '#2185d0' : '#db2828';
+    color = css_color[winner];
     for (i = 0; i < 3; ++i)
       table_cell[pos[i][0]][pos[i][1]].css({
-        boxShadow: 'inset 0 0 10px 5px ' + color,
-        textShadow: '0 0 10px ' + color
+        boxShadow: 'inset 0 0 10px 3px ' + color,
+        textShadow: '0 0 20px ' + color
       });
   }
 }

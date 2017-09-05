@@ -13,6 +13,13 @@ td {
     width: 33.33%;
     height: 33.33%;
     transition: all 0.2s ease;
+    position: relative;
+}
+td>p {
+    position: absolute;
+    right: 1em;
+    top: 1em;
+    opacity: 0.3;
 }
 td.even {
     background-color: white;
