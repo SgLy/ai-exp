@@ -1,1 +1,3 @@
-semantic/    linguist-vendored=false
+semantic linguist-vendored
+semantic/ linguist-vendored
+semantic/* linguist-vendored
