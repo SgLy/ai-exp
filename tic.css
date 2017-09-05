@@ -1,0 +1,30 @@
+.ui.container {
+    padding-top: 4em;
+}
+table {
+    width: 30vw;
+    height: 30vw;
+    border-spacing: 0;
+    text-align: center;
+    box-shadow: 0 0 30px 8px black;
+    margin: 2em auto;
+}
+td {
+    width: 33.33%;
+    height: 33.33%;
+    transition: all 0.2s ease;
+}
+td.even {
+    background-color: white;
+}
+td.odd {
+    background-color: rgb(200, 200 ,200);
+}
+td>i {
+    font-size: 7vw !important;
+}
+h2.ui.header>i.icon {
+    margin-right: 0.25em !important;
+    font-size: 1em;
+    vertical-align: baseline;
+}
