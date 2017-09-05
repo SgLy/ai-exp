@@ -3,6 +3,7 @@ var table_row = [];
 var table_cell = [];
 var finished = false;
 
+// Chess definition
 var Chess = {
   BLUE: 0,
   RED: 1,
@@ -15,7 +16,9 @@ var css_color = ['#2185d0', '#db2828'];
 Object.freeze(css_color);
 
 var turn = Chess.BLUE;
+var ai = Chess.RED;
 
+// Map definition and help function
 function Map()
 {
   var map = [];
@@ -27,10 +30,7 @@ function Map()
   }
   return map;
 }
-
-var map = Map();
-
-function copy(old_map)
+Map.copy = function (old_map)
 {
   var map = [];
   for (var i = 0; i < 3; ++i) {
@@ -41,6 +41,8 @@ function copy(old_map)
   }
   return map;
 }
+
+var map = Map();
 
 function init()
 {
@@ -95,18 +97,22 @@ function init()
           $('h2>i').removeClass(css_class[turn]);
           turn = 1 - turn;
           $('h2>i').addClass(css_class[turn]);
+
+          if (turn == ai)
+            ai_move(map);
         }
       }
     });
 
   $('h2>i').addClass(css_class[turn]);
+  if (turn == ai)
+    ai_move(map);
 }
 
 function putChess(x, y, chess)
 {
   map[x][y] = chess;
   result = ifFinished(map);
-  console.log(result);
   if (result.winner == Chess.EMPTY && round < 9)
     return;
   else
@@ -167,6 +173,39 @@ function finish(winner, win_position)
         boxShadow: 'inset 0 0 10px 3px ' + color,
         textShadow: '0 0 20px ' + color
       });
+  }
+}
+
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function ai_move(map)
+{
+  after_judge = function (x, y) {
+    $('.dimmable').dimmer('hide');
+    table_cell[x][y].click();
+  }
+
+  // Before judge
+  $('.dimmable').dimmer('show');
+
+  setTimeout('ai_judge(map, after_judge)', 250);
+}
+
+function ai_judge(map, callback)
+{
+  for (i = 0; i < 1000000; ++i)
+  for (j = 0; j < 250; ++j);
+  while (true) {
+    x = getRandomInt(0, 3);
+    y = getRandomInt(0, 3);
+    if (map[x][y] == Chess.EMPTY) {
+      callback(x, y);
+      break;
+    }
   }
 }
 

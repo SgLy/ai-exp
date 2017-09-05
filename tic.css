@@ -1,19 +1,24 @@
 .ui.container {
     padding-top: 4em;
 }
-table {
+.dimmable {
     width: 30vw;
     height: 30vw;
+    margin: 2em auto;
+    box-shadow: 0 0 30px 8px black;
+}
+table {
+    width: 100.1%;
+    height: 100.1%;
     border-spacing: 0;
     text-align: center;
-    box-shadow: 0 0 30px 8px black;
-    margin: 2em auto;
 }
 td {
     width: 33.33%;
     height: 33.33%;
     transition: all 0.2s ease;
     position: relative;
+    cursor: pointer;
 }
 td>p {
     position: absolute;

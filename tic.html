@@ -7,13 +7,19 @@
   <body>
     <div class="ui center aligned main container">
       <h2 class="ui header"><i class="fitted icon"></i>'s turn</h2>
-      <table>
-        <tbody></tbody>
-      </table>
+      <div class="dimmable">
+        <table>
+          <tbody></tbody>
+        </table>
+        <div class="ui dimmer">
+          <div class="ui text loader">AI thinking...</div>
+        </div>
+      </div>
       <h1 class="ui header"></h1>
     </div>
   </body>
   <script src="semantic/dist/jquery.min.js"></script>
   <script src="semantic/dist/semantic.min.js"></script>
+  <script src="./semantic/dist/components/dimmer.min.js"></script>
   <script src="tic.js"></script>
 </html>
