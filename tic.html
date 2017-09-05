@@ -1,0 +1,79 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="./semantic/dist/semantic.min.css">
+    <link rel="stylesheet" href="./semantic/dist/components/icon.min.css">
+    <style>
+.ui.container {
+  padding-top: 4em;
+}
+table {
+  border-spacing: 0;
+  text-align: center;
+  box-shadow: 0 0 30px 8px black;
+  margin: 0 auto;
+}
+td {
+  width: 100px;
+  height: 100px;
+  transition: all 0.2s ease;
+}
+td.even {
+  background-color: white;
+}
+td.odd {
+  background-color: rgb(200, 200 ,200);
+}
+    </style>
+  </head>
+  <body>
+    <div class="ui main container">
+      <table>
+        <tbody>
+          <tr>
+            <td class="odd"></td>
+            <td class="even"></td>
+            <td class="odd"></td>
+          </tr>
+          <tr>
+            <td class="even"></td>
+            <td class="odd"></td>
+            <td class="even"></td>
+          </tr>
+          <tr>
+            <td class="odd"></td>
+            <td class="even"></td>
+            <td class="odd"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+  <script src="./semantic/dist/jquery.min.js"></script>
+  <script src="./semantic/dist/semantic.min.js"></script>
+  <script>
+var cnt = 0;
+$('td')
+  .on('mouseenter', function() {
+    $(this).css({
+      boxShadow: 'inset 0 0 10px 4px rgba(0, 0,  0.6)'
+    })
+  })
+  .on('mouseleave', function() {
+    $(this).css({
+      boxShadow: 'none'
+    })
+  })
+  .on('click', function() {
+    if ($(this).children().length == 0) {
+      icon = $(cnt % 2 == 0 ? '<i class="huge blue remove icon"></i>' : '<i class="huge red radio icon"></i>');
+      icon.hide();
+      $(this).append(icon);
+      icon.fadeIn({
+        duration: 200
+      });
+      cnt++;
+    }
+  });
+
+  </script>
+</html>
