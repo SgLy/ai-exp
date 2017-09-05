@@ -9,7 +9,7 @@ var Chess = {
   EMPTY: 2
 }
 Object.freeze(Chess);
-var css_class = ['blue remove', 'red radio'];
+var css_class = ['blue moon', 'red sun'];
 Object.freeze(css_class);
 
 var turn = Chess.CROSS;
@@ -62,14 +62,16 @@ function init()
 
   $('td')
     .on('mouseenter', function() {
-      $(this).css({
-        boxShadow: 'inset 0 0 10px 4px rgba(0, 0, 0, 0.6)'
-      })
+      if (!finished)
+        $(this).css({
+          boxShadow: 'inset 0 0 10px 4px rgba(0, 0, 0, 0.6)'
+        })
     })
     .on('mouseleave', function() {
-      $(this).css({
-        boxShadow: 'none'
-      })
+      if (!finished)
+        $(this).css({
+          boxShadow: 'none'
+        })
     })
     .on('click', function() {
       if (finished)
@@ -83,9 +85,7 @@ function init()
         });
         round++;
         putChess($(this).data('x'), $(this).data('y'), turn);
-        if (finished) {
-          $('h2').html('Finished');
-        } else {
+        if (!finished) {
           $('h2>i').removeClass(css_class[turn]);
           turn = 1 - turn;
           $('h2>i').addClass(css_class[turn]);
@@ -93,43 +93,75 @@ function init()
       }
     });
 
-  $('h2>i').addClass('blue remove');
+  $('h2>i').addClass(css_class[turn]);
 } 
 
 function putChess(x, y, chess)
 {
   map[x][y] = chess;
-  winner = ifFinished(map);
-  if (winner == Chess.EMPTY && round < 9)
+  result = ifFinished(map);
+  console.log(result);
+  if (result.winner == Chess.EMPTY && round < 9)
     return;
-  finished = true;
-  if (winner == Chess.CROSS) {
-    $('h1').addClass('blue');
-    $('h1').text('Cross Win!');
-  } else if (winner == Chess.CIRCLE) {
-    $('h1').addClass('red');
-    $('h1').text('Circle Win!');
-  } else if (winner == Chess.EMPTY) {
-    $('h1').text('Draw!');
-  }
+  else
+    finish(result.winner, result.win_position);
 }
 
 function ifFinished(map)
 {
   for (i = 0; i < 3; ++i) {
     // Horizontal
-    if (map[i][0] == map[i][1] && map[i][1] == map[i][2])
-      return map[i][0];
+    if (map[i][0] != Chess.EMPTY && map[i][0] == map[i][1] && map[i][1] == map[i][2])
+      return {'winner': map[i][0], 'win_position': ['h', i]};
 
     // Vertical
-    if (map[0][i] == map[1][i] && map[1][i] == map[2][i])
-      return map[0][i];
+    if (map[0][i] != Chess.EMPTY && map[0][i] == map[1][i] && map[1][i] == map[2][i])
+      return {'winner': map[0][i], 'win_position': ['v', i]};
   }
   // Diagonal
-  if (map[0][0] == map[1][1] && map[1][1] == map[2][2])
-    return map[0][0];
-  if (map[0][2] == map[1][1] && map[1][1] == map[2][0])
-    return map[0][2];
-  return Chess.EMPTY;
+  if (map[0][0] != Chess.EMPTY && map[0][0] == map[1][1] && map[1][1] == map[2][2])
+    return {'winner': map[1][1], 'win_position': ['d', 0]};
+  if (map[0][2] != Chess.EMPTY && map[0][2] == map[1][1] && map[1][1] == map[2][0])
+    return {'winner': map[1][1], 'win_position': ['d', 1]};
+  return {'winner': Chess.EMPTY, 'win_position': null};
 }
+
+function finish(winner, win_position)
+{
+  finished = true;
+  $('h2').html('Finished');
+  if (winner == Chess.CROSS) {
+    $('h1').addClass('blue');
+    $('h1').html('<i class="' + css_class[winner] +' icon"></i>Win!');
+  } else if (winner == Chess.CIRCLE) {
+    $('h1').addClass('red');
+    $('h1').html('<i class="' + css_class[winner] +' icon"></i>Win!');
+  } else if (winner == Chess.EMPTY) {
+    $('h1').text('Draw!');
+  }
+  
+  $('td').css({
+    boxShadow: 'none'
+  });
+  if (winner != Chess.EMPTY) {
+    p = win_position[1];
+    if (win_position[0] == 'h')
+      pos = [[p, 0], [p, 1], [p, 2]];
+    else if (win_position[0] == 'v')
+      pos = [[0, p], [1, p], [2, p]];
+    else if (win_position[0] == 'd') {
+      if (p == 0)
+        pos = [[0, 0], [1, 1], [2, 2]];
+      else
+        pos = [[0, 2], [1, 1], [2, 0]];
+    }
+    color = (winner == Chess.CROSS) ? '#2185d0' : '#db2828';
+    for (i = 0; i < 3; ++i)
+      table_cell[pos[i][0]][pos[i][1]].css({
+        boxShadow: 'inset 0 0 10px 5px ' + color,
+        textShadow: '0 0 10px ' + color
+      });
+  }
+}
+
 init();

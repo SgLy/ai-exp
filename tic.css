@@ -21,9 +21,9 @@ td.odd {
     background-color: rgb(200, 200 ,200);
 }
 td>i {
-    font-size: 7vw !important;
+    font-size: 6vw !important;
 }
-h2.ui.header>i.icon {
+.ui.header>i.icon {
     margin-right: 0.25em !important;
     font-size: 1em;
     vertical-align: baseline;
