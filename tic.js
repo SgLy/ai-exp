@@ -16,12 +16,12 @@ var css_color = ['#2185d0', '#db2828'];
 Object.freeze(css_color);
 
 var turn = Chess.BLUE;
-var ai = Chess.RED;
+var ai = [Chess.RED];
 
 // Map definition and help function
 function Map()
 {
-  var map = [];
+  map = [];
   for (var i = 0; i < 3; ++i) {
     row = [];
     for (var j = 0; j < 3; ++j)
@@ -32,17 +32,21 @@ function Map()
 }
 Map.copy = function (old_map)
 {
-  var map = [];
+  var map = new Array(3);
   for (var i = 0; i < 3; ++i) {
-    row = [];
+    map[i] = new Array(3);
     for (var j = 0; j < 3; ++j)
-      row.push(old_map[i][j]);
-    map.push(row);
+      map[i][j] = old_map[i][j];
   }
   return map;
 }
 
 var map = Map();
+
+Array.prototype.contain = function(element)
+{
+  return this.indexOf(element) != -1;
+}
 
 function init()
 {
@@ -98,15 +102,15 @@ function init()
           turn = 1 - turn;
           $('h2>i').addClass(css_class[turn]);
 
-          if (turn == ai)
-            ai_move(map);
+          if (ai.contain(turn))
+            aiMove(map, turn);
         }
       }
     });
 
   $('h2>i').addClass(css_class[turn]);
-  if (turn == ai)
-    ai_move(map);
+  if (ai.contain(turn))
+    aiMove(map, turn);
 }
 
 function putChess(x, y, chess)
@@ -182,9 +186,9 @@ function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
 }
 
-function ai_move(map)
+function aiMove(map, turn)
 {
-  after_judge = function (x, y) {
+  afterJudge = function (x, y) {
     $('.dimmable').dimmer('hide');
     table_cell[x][y].click();
   }
@@ -192,21 +196,70 @@ function ai_move(map)
   // Before judge
   $('.dimmable').dimmer('show');
 
-  setTimeout('ai_judge(map, after_judge)', 250);
+  setTimeout('aiJudge(map, turn, afterJudge)', 250);
 }
 
-function ai_judge(map, callback)
+var dfs_counter = 0;
+function aiJudge(map, turn, callback)
 {
-  for (i = 0; i < 1000000; ++i)
-  for (j = 0; j < 150; ++j);
-  while (true) {
-    x = getRandomInt(0, 3);
-    y = getRandomInt(0, 3);
-    if (map[x][y] == Chess.EMPTY) {
-      callback(x, y);
-      break;
-    }
+  dfs_counter = 0;
+  console.time('full_dfs');
+  res = fullDfs(map, turn);
+  console.timeEnd('full_dfs');
+  console.log(dfs_counter);
+  callback(res.move.x, res.move.y);
+}
+
+function isFull(map)
+{
+  var cnt = 0;
+  for (var i = 0; i < 3; ++i)
+    for (var j = 0; j < 3; ++j)
+      if (map[i][j] == Chess.EMPTY)
+        ++cnt;
+  return cnt == 0;
+}
+
+function getResult(map, turn)
+{
+  if ((res = ifFinished(map).winner) != Chess.EMPTY)
+    return res;
+  return isFull(map) ? 'draw' : null;
+}
+
+function getRandomMove(moves, turn)
+{
+  var filtered_moves = [];
+  for (var i in moves)
+    if (moves[i].winner == turn)
+      filtered_moves.push(i);
+  if (filtered_moves.length == 0)
+    return null;
+  return moves[filtered_moves[getRandomInt(0, filtered_moves.length)]];
+}
+
+function fullDfs(map, turn)
+{
+  dfs_counter++;
+  var moves = [];
+  for (var i = 0; i < 3; ++i)
+    for (var j = 0; j < 3; ++j)
+      if (map[i][j] == Chess.EMPTY) {
+        var new_map = Map.copy(map);
+        new_map[i][j] = turn;
+        var res;
+        if ((res = getResult(new_map, turn)) == null)
+          res = fullDfs(Map.copy(new_map), 1 - turn).winner;
+        moves.push({'winner': res, 'move': {'x': i, 'y': j}});
+      }
+
+  var move = getRandomMove(moves, turn);
+  if (move == null) {
+    move = getRandomMove(moves, 'draw');
+    if (move == null)
+      move = getRandomMove(moves, 1 - turn);
   }
+  return move;
 }
 
 init();
