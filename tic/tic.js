@@ -58,6 +58,7 @@ function init()
   $('tbody').empty();
   $('h1').empty();
   $('h2').html('<i class="fitted icon"></i>\'s turn')
+  turn = Chess.BLUE;
   for (var i = 0; i < 3; ++i) {
     table_row.push($('<tr></tr>'));
     row = [];
