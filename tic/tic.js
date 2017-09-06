@@ -16,7 +16,7 @@ var css_color = ['#2185d0', '#db2828'];
 Object.freeze(css_color);
 
 var turn = Chess.BLUE;
-var ai = [Chess.RED];
+var ai = new Set([Chess.RED]);
 
 // Map definition and help function
 function Map()
@@ -43,12 +43,7 @@ Map.copy = function (old_map)
 
 var map = Map();
 
-Array.prototype.contain = function(element)
-{
-  return this.indexOf(element) != -1;
-}
-
-function init()
+function restart()
 {
   round = 0;
   table_row = [];
@@ -111,14 +106,14 @@ function init()
           turn = 1 - turn;
           $('h2>i').addClass(css_class[turn]);
 
-          if (ai.contain(turn))
+          if (ai.has(turn))
             aiMove(map, turn);
         }
       }
     });
 
   $('h2>i').addClass(css_class[turn]);
-  if (ai.contain(turn))
+  if (ai.has(turn))
     aiMove(map, turn);
 }
 
@@ -154,7 +149,7 @@ function ifFinished(map)
 function finish(winner, win_position)
 {
   finished = true;
-  $('h2').html('Finished <a href="javascript:init()">Restart</a>');
+  $('h2').html('Finished');
   if (winner == Chess.BLUE) {
     $('h1').addClass('blue');
     $('h1').html('<i class="' + css_class[winner] +' icon"></i>Win!');
@@ -162,6 +157,7 @@ function finish(winner, win_position)
     $('h1').addClass('red');
     $('h1').html('<i class="' + css_class[winner] +' icon"></i>Win!');
   } else if (winner == Chess.EMPTY) {
+    $('h1').removeClass('red blue');
     $('h1').text('Draw!');
   }
 
@@ -205,17 +201,17 @@ function aiMove(map, turn)
   // Before judge
   $('.dimmable').dimmer('show');
 
-  setTimeout('aiJudge(map, turn, afterJudge)', 250);
+  setTimeout('aiJudge(map, turn, afterJudge)', 50);
 }
 
 var dfs_counter = 0;
 function aiJudge(map, turn, callback)
 {
   dfs_counter = 0;
-  console.time('full_dfs');
+  console.time('dfs');
   res = fullDfs(map, turn);
-  console.timeEnd('full_dfs');
-  console.log(dfs_counter);
+  console.timeEnd('dfs');
+  console.log('Dfs count: ' + dfs_counter);
   callback(res.move.x, res.move.y);
 }
 
@@ -247,6 +243,9 @@ function getRandomMove(moves, turn)
   return moves[filtered_moves[getRandomInt(0, filtered_moves.length)]];
 }
 
+// Iterating all possible moves
+//   and randomly choose one to
+//   improve game experience
 function fullDfs(map, turn)
 {
   dfs_counter++;
@@ -258,7 +257,7 @@ function fullDfs(map, turn)
         new_map[i][j] = turn;
         var res;
         if ((res = getResult(new_map, turn)) == null)
-          res = fullDfs(Map.copy(new_map), 1 - turn).winner;
+          res = quickDfs(Map.copy(new_map), 1 - turn).winner;
         moves.push({'winner': res, 'move': {'x': i, 'y': j}});
       }
 
@@ -271,4 +270,96 @@ function fullDfs(map, turn)
   return move;
 }
 
-init();
+// Exit once get a good move
+//   to improve computing speed
+function quickDfs(map, turn)
+{
+  dfs_counter++;
+  var moves = [];
+  for (var i = 0; i < 3; ++i)
+    for (var j = 0; j < 3; ++j)
+      if (map[i][j] == Chess.EMPTY) {
+        var new_map = Map.copy(map);
+        new_map[i][j] = turn;
+        var res;
+        if ((res = getResult(new_map, turn)) == null)
+          res = quickDfs(new_map, 1 - turn).winner;
+        if (res == turn)
+          return {'winner': res, 'move': {'x': i, 'y': j}};
+        moves.push({'winner': res, 'move': {'x': i, 'y': j}});
+      }
+
+  for (var move of moves)
+    if (move.winner == 'draw')
+      return move;
+  return moves[0];
+}
+
+function initSettingPanel()
+{
+  div_id = ['#blue', '#red'];
+  for (var chess of [Chess.BLUE, Chess.RED]) {
+    $(div_id[chess] + '>i.icons>:first-child')
+      .addClass(css_class[chess]);
+    $(div_id[chess] + '>i')
+      .data('chess', chess)
+      .on('click', function() {
+        var chess = $(this).data('chess');
+        if (ai.has(chess)) {
+          ai.delete(chess);
+          $(this).children('.corner')
+            .removeClass('computer')
+            .addClass('user');
+          $(this).siblings('.popup')
+            .text('Switch to AI');
+        } else {
+          ai.add(chess);
+          $(this).children('.corner')
+            .removeClass('user')
+            .addClass('computer');
+          $(this).siblings('.popup')
+            .text('Switch to human');
+        }
+      });
+  }
+  placeIcons();
+
+  $('.setting>i')
+    .on('mouseenter', function() {
+      $(this).css({
+        opacity: 1,
+        transform: 'scale(1.1, 1.1)'
+      }).popup('show');
+    })
+    .on('mouseleave', function() {
+      $(this).css({
+        opacity: 0.5,
+        transform: 'scale(1, 1)'
+      }).popup('hide all');
+    });
+  $('#restart>i')
+    .on('click', function() {
+      restart();
+    });
+}
+
+function placeIcons()
+{
+  console.log('resized');
+  $('#restart').css({
+    top: $('table').offset().top,
+    left: $('table').offset().left + $('table').width() + 40
+  });
+  $('#blue').css({
+    top: $('#restart').offset().top + $('#restart').height() + 10,
+    left: $('table').offset().left + $('table').width() + 40
+  });
+  $('#red').css({
+    top: $('#blue').offset().top + $('#blue').height() + 10,
+    left: $('table').offset().left + $('table').width() + 40
+  });
+}
+
+initSettingPanel();
+window.onresize = placeIcons;
+restart();

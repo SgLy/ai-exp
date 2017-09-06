@@ -1,9 +1,27 @@
+html {
+    font-size: 2.5vmin;
+}
 .ui.container {
     padding-top: 4em;
+    position: relative;
+}
+.setting {
+    position: absolute;
+    z-index: 100;
+    font-size: 9vmin;
+    width: 1.2em;
+    height: 1.2em;
+    text-align: center;
+}
+.setting>i {
+    cursor: pointer;
+    line-height: 1em;
+    transition: all 0.2s ease;
+    opacity: 0.5;
 }
 .dimmable {
-    width: 70vmin;
-    height: 70vmin;
+    width: 60vmin;
+    height: 60vmin;
     margin: 2em auto;
     overflow: unset !important;
 }
@@ -34,7 +52,7 @@ td.odd {
     background-color: rgb(200, 200 ,200);
 }
 td>i {
-    font-size: 12vmin !important;
+    font-size: 11vmin !important;
 }
 .ui.header>i.icon {
     margin-right: 0.25em !important;
