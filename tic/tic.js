@@ -50,6 +50,14 @@ Array.prototype.contain = function(element)
 
 function init()
 {
+  round = 0;
+  table_row = [];
+  table_cell = [];
+  finished = false;
+  map = Map();
+  $('tbody').empty();
+  $('h1').empty();
+  $('h2').html('<i class="fitted icon"></i>\'s turn')
   for (var i = 0; i < 3; ++i) {
     table_row.push($('<tr></tr>'));
     row = [];
@@ -145,7 +153,7 @@ function ifFinished(map)
 function finish(winner, win_position)
 {
   finished = true;
-  $('h2').html('Finished');
+  $('h2').html('Finished <a href="javascript:init()">Restart</a>');
   if (winner == Chess.BLUE) {
     $('h1').addClass('blue');
     $('h1').html('<i class="' + css_class[winner] +' icon"></i>Win!');
