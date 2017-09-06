@@ -198,7 +198,7 @@ function ai_move(map)
 function ai_judge(map, callback)
 {
   for (i = 0; i < 1000000; ++i)
-  for (j = 0; j < 250; ++j);
+  for (j = 0; j < 150; ++j);
   while (true) {
     x = getRandomInt(0, 3);
     y = getRandomInt(0, 3);
