@@ -193,7 +193,7 @@ function getRandomInt(min, max) {
 
 function aiMove(map, turn)
 {
-  afterJudge = function (x, y) {
+  afterJudge = (x, y) => {
     $('.dimmable').dimmer('hide');
     table_cell[x][y].click();
   }
@@ -201,15 +201,17 @@ function aiMove(map, turn)
   // Before judge
   $('.dimmable').dimmer('show');
 
-  setTimeout('aiJudge(map, turn, afterJudge)', 50);
+  setTimeout('aiJudge(map, turn, afterJudge)', 0);
 }
 
 var dfs_counter = 0;
+var buffer;
 function aiJudge(map, turn, callback)
 {
   dfs_counter = 0;
+  buffer = {};
   console.time('dfs');
-  res = fullDfs(map, turn);
+  res = quickDfs(map, turn);
   console.timeEnd('dfs');
   console.log('Dfs count: ' + dfs_counter);
   callback(res.move.x, res.move.y);
@@ -243,55 +245,57 @@ function getRandomMove(moves, turn)
   return moves[filtered_moves[getRandomInt(0, filtered_moves.length)]];
 }
 
-// Iterating all possible moves
-//   and randomly choose one to
-//   improve game experience
-function fullDfs(map, turn)
+function evaluate(map, turn)
 {
-  dfs_counter++;
-  var moves = [];
-  for (var i = 0; i < 3; ++i)
-    for (var j = 0; j < 3; ++j)
+  for (let i = 0; i < 3; ++i)
+    for (let j = 0; j < 3; ++j)
       if (map[i][j] == Chess.EMPTY) {
-        var new_map = Map.copy(map);
+        let new_map = Map.copy(map);
         new_map[i][j] = turn;
-        var res;
-        if ((res = getResult(new_map, turn)) == null)
-          res = quickDfs(Map.copy(new_map), 1 - turn).winner;
-        moves.push({'winner': res, 'move': {'x': i, 'y': j}});
+        if ((res = getResult(new_map, turn)) == turn)
+          return 1000;
       }
-
-  var move = getRandomMove(moves, turn);
-  if (move == null) {
-    move = getRandomMove(moves, 'draw');
-    if (move == null)
-      move = getRandomMove(moves, 1 - turn);
-  }
-  return move;
+  return 0;
 }
 
 // Exit once get a good move
 //   to improve computing speed
+//   # USING HEURISTIC #
 function quickDfs(map, turn)
 {
+  if (buffer[JSON.stringify({ map: map, turn: turn })] !== undefined)
+    return buffer[JSON.stringify({ map: map, turn: turn })];
   dfs_counter++;
-  var moves = [];
+  let choices = [];
   for (var i = 0; i < 3; ++i)
     for (var j = 0; j < 3; ++j)
       if (map[i][j] == Chess.EMPTY) {
-        var new_map = Map.copy(map);
+        let new_map = Map.copy(map);
         new_map[i][j] = turn;
-        var res;
-        if ((res = getResult(new_map, turn)) == null)
-          res = quickDfs(new_map, 1 - turn).winner;
-        if (res == turn)
-          return {'winner': res, 'move': {'x': i, 'y': j}};
-        moves.push({'winner': res, 'move': {'x': i, 'y': j}});
+        choices.push({
+          map: new_map,
+          move: { x: i, y: j },
+          score: evaluate(new_map, turn)
+        });
       }
+
+  let moves = [];
+  for (let choice of choices) {
+    let res;
+    if ((res = getResult(choice.map, turn)) == null)
+      res = quickDfs(choice.map, 1 - turn).winner;
+    if (res == turn) {
+      move = { winner: res, move: choice.move };
+      buffer[JSON.stringify({ map: map, turn: turn })] = move;
+      return move;
+    }
+    moves.push({ winner: res, move: choice.move });
+  }
 
   for (var move of moves)
     if (move.winner == 'draw')
       return move;
+  buffer[JSON.stringify({ map: map, turn: turn })] = move;
   return moves[0];
 }
 
