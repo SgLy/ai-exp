@@ -227,7 +227,7 @@ function isFull(map)
   return cnt == 0;
 }
 
-function getResult(map, turn)
+function getResult(map)
 {
   if ((res = ifFinished(map).winner) != Chess.EMPTY)
     return res;
@@ -247,15 +247,34 @@ function getRandomMove(moves, turn)
 
 function evaluate(map, turn)
 {
+  let score = 0;
   for (let i = 0; i < 3; ++i)
     for (let j = 0; j < 3; ++j)
       if (map[i][j] == Chess.EMPTY) {
         let new_map = Map.copy(map);
         new_map[i][j] = turn;
-        if ((res = getResult(new_map, turn)) == turn)
-          return 1000;
+        if ((res = getResult(new_map)) == turn)
+          score += 1000;
+        else {
+          for (let p = 0; p < 3; ++p)
+            for (let q = 0; q < 3; ++q)
+              if (new_map[i][j] == Chess.EMPTY) {
+                let new_new_map = Map.copy(new_map);
+                new_new_map[i][j] = turn;
+                if ((res = getResult(new_new_map)) == turn)
+                  score += 100;
+              }
+        }
       }
-  return 0;
+  for (let i = 0; i < 3; ++i)
+    for (let j = 0; j < 3; ++j)
+      if (map[i][j] == Chess.EMPTY) {
+        let new_map = Map.copy(map);
+        new_map[i][j] = 1 - turn;
+        if ((res = getResult(new_map)) == 1 - turn)
+          score += 1000;
+      }
+  return score;
 }
 
 // Exit once get a good move
@@ -279,10 +298,12 @@ function quickDfs(map, turn)
         });
       }
 
+  choices.sort((a, b) => b.score - a.score);
+
   let moves = [];
   for (let choice of choices) {
     let res;
-    if ((res = getResult(choice.map, turn)) == null)
+    if ((res = getResult(choice.map)) == null)
       res = quickDfs(choice.map, 1 - turn).winner;
     if (res == turn) {
       move = { winner: res, move: choice.move };
