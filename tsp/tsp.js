@@ -1,6 +1,6 @@
 'use strict';
 
-let data = JSON.parse(`
+let points = JSON.parse(`
 [
     { "X": 4350, "Y": 4425, "id": 1 },
     { "X": 4500, "Y": 4425, "id": 2 },
@@ -147,26 +147,76 @@ let data = JSON.parse(`
     { "X": 15225, "Y": 3250, "id": 143 },
     { "X": 15225, "Y": 3150, "id": 144 }
 ]`);
+let svg;
+let drawRatio;
+let offsetX, offsetY;
 
-$(document).ready(() => {
-    let svg = $('svg')
+function initSvg(cssSelector, ratio = 0.1) {
+    svg = cssSelector;
+    $(svg)
         .attr({
-            width: '100%',
-            height: '100%',
+            width: '1200px',
+            height: '900px',
             version: '1.1',
             xmlns: 'http://www.w3.org/2000/svg'
         });
-    $.each(data, (index, value) => {
-        $(`<circle cx=${value.X / 10 - 400} cy=${value.Y / 10 - 200} r=2 fill=black>`).appendTo(svg);
-    });
-    let line = '';
-    $.each(data, (index, value) => {
-        line += `${index === 0 ? 'M' : 'L'}${value.X / 10 - 400} ${value.Y / 10 - 200} `;
-    });
-    let path = $(`<path d='${line}' />`);
-    path.css({
-        fillOpacity: 0,
-        stroke: 'rgba(0, 0, 255, 0.5)'
-    }).appendTo(svg);
+    drawRatio = ratio;
+}
+function refreshSvg() {
     $('body').html($('body').html());
+}
+function addPoint(point) {
+    $(`<circle cx=${point.X * drawRatio - offsetX} cy=${point.Y * drawRatio - offsetY} r=2 fill=black>`).appendTo($(svg));
+}
+function addPoints(points) {
+    offsetX = offsetY = 1e10;
+    $.each(points, (_, value) => {
+        offsetX = Math.min(offsetX, value.X);
+        offsetY = Math.min(offsetY, value.Y);
+    });
+    offsetX = offsetX * drawRatio - 20;
+    offsetY = offsetY * drawRatio - 20;
+    $.each(points, (index, value) => addPoint(value));
+}
+function clearPoints() {
+    $(svg).children('circle').remove();
+}
+function clearPath() {
+    $(svg).children('path').remove();
+}
+function addPath(path) {
+    let line = '';
+    $.each(path, (index, value) => {
+        line += `${index === 0 ? 'M' : 'L'}${points[value].X * drawRatio - offsetX} ${points[value].Y * drawRatio - offsetY} `;
+    });
+    $(`<path d="${line}Z"></path>`)
+        .css({
+            fillOpacity: 0,
+            stroke: 'rgba(0, 0, 255, 0.5)'
+        })
+        .appendTo($(svg));
+}
+
+function exampleAlgorithm(points) {
+    clearPath();
+
+    let n = points.length;
+    let path = [];
+    for (let i = 0; i < n; ++i)
+        path.push(i);
+    // make a random array
+    for (let i = 0; i < n; ++i) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [path[i], path[j]] = [path[j], path[i]];
+    }
+
+    addPath(path);
+    refreshSvg();
+}
+
+$(document).ready(() => {
+    initSvg('svg', 0.05);
+    addPoints(points);
+    refreshSvg();
+    exampleAlgorithm(points);
 });
