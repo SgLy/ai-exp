@@ -197,22 +197,74 @@ function addPath(path) {
         .appendTo($(svg));
 }
 
+
+function calc_sum(path,points){
+  let n = points.length;
+  let sum_mid = 0;
+  for (let k = 1; k < n; ++k){
+    sum_mid += distance(path[k-1],path[k],points);
+  }
+    sum_mid += distance(path[n-1],path[0],points);
+  return sum_mid;
+}
+
+function distance(i,j,points){
+    return Math.sqrt((points[i].X-points[j].X)*(points[i].X-points[j].X)+(points[i].Y-points[j].Y)*(points[i].Y-points[j].Y));
+}
 function exampleAlgorithm(points) {
     clearPath();
-
     let n = points.length;
     let path = [];
-    for (let i = 0; i < n; ++i)
+    let sum_ini = 0;
+    path.push(0);
+    for (let i = 1; i < n; ++i){
         path.push(i);
-    // make a random array
-    for (let i = 0; i < n; ++i) {
-        let j = Math.floor(Math.random() * (i + 1));
-        [path[i], path[j]] = [path[j], path[i]];
+        sum_ini += Math.sqrt((points[i].X-points[i-1].X)*(points[i].X-points[i-1].X)+(points[i].Y-points[i-1].Y)*(points[i].Y-points[i-1].Y));
     }
+    sum_ini += Math.sqrt((points[n-1].X-points[0].X)*(points[n-1].X-points[0].X)+(points[n-1].Y-points[0].Y)*(points[n-1].Y-points[0].Y));
+    console.log(sum_ini);
+    //默认从0-n-1的序列进行便利
+    let sum = 0;
+    //1.n^2顺序领域交换
+    for (let i = 0; i < n; ++i)
+      for (let j = 0; j < n; ++j)
+      if (j != i){
+          [path[i],path[j]] = [path[j],path[i]]
+          sum = calc_sum(path,points);
+          if (sum < sum_ini) {
+            clearPath();
+            addPath(path);
+            sum_ini = sum;
+          }else{
+          [path[j],path[i]] = [path[i],path[j]]
+          }
+      }
+    console.log(sum_ini);
+    //2.1000次随机领域搜索
 
-    addPath(path);
+    // let num = 0;
+    //
+    // let i = parseInt(Math.random()*(n),10);
+    // let j = parseInt(Math.random()*(n),10);
+    // console.log(i);
+    // console.log(j);
+    // while (num < 1){
+    //       let i = parseInt(Math.random()*(n),10);
+    //       let j = parseInt(Math.random()*(n),10);
+    //       [path[i],path[j]] = [path[j],path[i]]
+    //       sum = calc_sum(path,points);
+    //       console.log(sum)
+    //       if (sum < sum_ini) {
+    //         clearPath();
+    //         addPath(path);
+    //         num += 1;
+    //         sum_ini = sum;
+    //       }
+    // }
+    // console.log(sum_ini);
     refreshSvg();
 }
+
 
 $(document).ready(() => {
     initSvg('svg', 0.05);
