@@ -278,9 +278,9 @@ function exampleAlgorithm(points) {
 	*/
 	// 3.模拟退火 随便找两个交换版
 	
-	let now=sum_ini,cur=sum_ini,best=sum_ini,bestpath=path;
-	for(let T=10;T>1;T*=0.9999)
-		for(let i=0;i<100;++i){
+	let now=sum_ini,cur=sum_ini,best=sum_ini,bestpath=path.slice(0);
+	for(let T=1000;T>1;T*=0.9)
+		for(let i=0;i<100000;++i){
 			let p=0,q=0;
 			do{
 				p=Math.floor(Math.random()*n), q=Math.floor(Math.random()*n);
@@ -333,10 +333,10 @@ function exampleAlgorithm(points) {
 //			console.log(now);
 			if(now<best){
 				console.log("wow");
-				console.log(p);
-				console.log(q);
+//				console.log(p);
+//				console.log(q);
 				best=now;
-				bestpath=path;
+				bestpath=path.slice(0);
 			}
 		}
 	console.log("best "+best);
@@ -353,7 +353,7 @@ function exampleAlgorithm(points) {
 $(document).ready(() => {
     initSvg('svg', 0.05);
     addPoints(points);
-	shuffle(points);
+//	shuffle(points);
     refreshSvg();
     exampleAlgorithm(points);
 });
