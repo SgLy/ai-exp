@@ -272,7 +272,7 @@ function evaluate(map, turn)
         let new_map = Map.copy(map);
         new_map[i][j] = 1 - turn;
         if ((res = getResult(new_map)) == 1 - turn)
-          score += 1000;
+          score -= 1000;
       }
   return score;
 }

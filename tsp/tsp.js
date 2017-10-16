@@ -262,6 +262,39 @@ function exampleAlgorithm(points) {
     //       }
     // }
     // console.log(sum_ini);
+
+
+    //3.模拟退火
+    //其中领域搜索算法采用n^2交换
+    let change_num = 0;
+    let pathforsa = []
+    while(change_num < 1000){
+      let numed = 0;
+      let flag = [];
+      for (let i = 0;i<n;i++)
+        flag[i] = 0;
+      while (numed < n){
+        let i = parseInt(Math.random()*(n),10);
+        if (flag[i] == 0) {
+          pathforsa[numed] = i;
+          numed ++;
+          flag[i] = 1;
+        }
+      }
+      for (let i = 0; i < n; ++i)
+        for (let j = 0; j < n; ++j){
+            [pathforsa[i],pathforsa[j]] = [pathforsa[j],pathforsa[i]]
+            sum = calc_sum(pathforsa,points);
+            if (sum < sum_ini) {
+              clearPath();
+              addPath(pathforsa);
+              sum_ini = sum;
+            }else{
+            [pathforsa[j],pathforsa[i]] = [pathforsa[i],pathforsa[j]]
+            }
+      }
+      change_num++;
+    }
     refreshSvg();
 }
 
