@@ -155,13 +155,11 @@ let svg, table;
 let drawRatio;
 let offsetX, offsetY;
 
-function init(svgSelector = 'svg', tableSelector = 'table', ratio = 0.1) {
+function init(svgSelector = 'svg', tableSelector = 'table', ratio = 0.05) {
     svg = svgSelector;
     table = tableSelector;
     $(svg)
         .attr({
-            width: '1200px',
-            height: '900px',
             version: '1.1',
             xmlns: 'http://www.w3.org/2000/svg'
         });
@@ -169,7 +167,6 @@ function init(svgSelector = 'svg', tableSelector = 'table', ratio = 0.1) {
 }
 function refreshSvg() {
     $('body').html($('body').html());
-    bindTableSvg();
 }
 function addPoint(point) {
     $('<circle></circle>')
@@ -235,10 +232,11 @@ function bindTableSvg() {
                 $(this).css('box-shadow', '');
             });
 }
-function update(path, length, iters, temp, changes, imprvs) {
+function update(path, best, current, iters, temp, changes, imprvs) {
     clearPath(path);
     setPath(path);
-    $('#length').html(length);
+    $('#best').html(best);
+    $('#current').html(current);
     $('#iters').html(iters);
     $('#temp').html(temp);
     $('#changes').html(changes);
@@ -246,12 +244,17 @@ function update(path, length, iters, temp, changes, imprvs) {
     refreshSvg();
 }
 
-function shuffle(a) {
-    for (let i = a.length - 1; i > 0; --i) {
+Array.prototype.shuffle = function () {
+    for (let i = this.length - 1; i > 0; --i) {
         const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+        [this[i], this[j]] = [this[j], this[i]];
     }
-}
+};
+Array.prototype.reverse = function(left, right) {
+    for (let i = left, j = right; i < j; ++i, --j)
+        [this[i], this[j]] = [this[j], this[i]];
+};
+
 let sqr = (x) => x * x;
 let distance = (i, j) =>
     Math.sqrt(sqr(points[i].X - points[j].X) + sqr(points[i].Y - points[j].Y));
@@ -309,15 +312,18 @@ function simulatedAnnealing(points) {
     let path = [];
     for (let i = 0; i < n; ++i)
         path.push(i);
+    path.shuffle();
     let sum = getDistanceSum(path);
     let now = sum, best = sum, bestpath = path.slice(0);
-    let iters = 0, changes = 0, imprvs = 0;
+    let changes = 0, imprvs = 0;
     let p = new Promise((resolve) => { resolve(); });
-    for (let T = 1000 ; T > 1; T *= 0.9, ++iters)
+    for (let T = 1000, i = 0; T > 1; T *= 0.99, ++i)
         p = p.then(() => {
             return new Promise((resolve) => {
                 setTimeout(() => {
-                    update(bestpath, best, iters, T, changes, imprvs);
+                    let iters = i;
+                    update(bestpath, best, now, iters * 100000, T, changes, imprvs);
+                    console.time('loop');
                     for (let i = 0; i < 100000; ++i) {
                         let p = 0, q = 0;
                         do {
@@ -331,10 +337,46 @@ function simulatedAnnealing(points) {
                         // [path[p],path[q]] = [path[q],path[p]];
 
                         // console.log(cur);
+                        let cur = now;
+                        let type;
+                        if (Math.random() < 0.5) {
+                            type = 1;
+                            // Case 1: swap
+                            if ((q + 1) % n == p)
+                                [p, q] = [q, p];
+                            if ((p + 1) % n == q) {
+                                // r p q s
+                                let r = (p + n - 1) % n, s = (q + 1) % n;
+                                cur -= distance(path[r], path[p]);
+                                cur -= distance(path[q], path[s]);
+                                cur += distance(path[r], path[q]);
+                                cur += distance(path[p], path[s]);
+                            } else {
+                                cur -= distance(path[(p + n - 1) % n], path[p]);
+                                cur -= distance(path[p], path[(p + 1) % n]);
+                                cur += distance(path[(p + n - 1) % n], path[q]);
+                                cur += distance(path[q], path[(p + 1) % n]);
 
-                        let newpath = path.slice(0);
-                        [newpath[p], newpath[q]] = [newpath[q], newpath[p]];
-                        let cur = getDistanceSum(newpath);
+                                cur -= distance(path[(q + n - 1) % n], path[q]);
+                                cur -= distance(path[q], path[(q + 1) % n]);
+                                cur += distance(path[(q + n - 1) % n], path[p]);
+                                cur += distance(path[p], path[(q + 1) % n]);
+                            }
+                        } else {
+                            // Case 2: reverse
+                            type = 2;
+                            if (p > q)
+                                [p, q] = [q, p];
+                            if ((q + 1) % n != p) {
+                                // o p ... q r
+                                // o q ... p r
+                                let o = (p + n - 1) % n, r = (q + 1) % n;
+                                cur -= distance(path[o], path[p]);
+                                cur -= distance(path[q], path[r]);
+                                cur += distance(path[o], path[q]);
+                                cur += distance(path[p], path[r]);
+                            }
+                        }
 
                         // console.log("cur "+cur);
                         // console.log("cur0 "+cur0);
@@ -342,9 +384,12 @@ function simulatedAnnealing(points) {
                         // let t0=Math.random(),t1=Math.exp((now - cur) / T);
                         // console.log("random "+t0);
                         // console.log("exp "+t1);
-                        if (Math.random() < Math.exp((now - cur) / T)) {
+                        if (cur < now || Math.random() < Math.exp((now - cur) / T)) {
                             now = cur;
-                            path = newpath;
+                            if (type === 1)
+                                [path[p], path[q]] = [path[q], path[p]];
+                            else if (type === 2)
+                                path.reverse(p, q);
                             ++changes;
                         }
                         // console.log(now);
@@ -356,6 +401,7 @@ function simulatedAnnealing(points) {
                             ++imprvs;
                         }
                     }
+                    console.timeEnd('loop');
                     resolve();
                 }, 1);
             });
@@ -367,9 +413,10 @@ function simulatedAnnealing(points) {
 }
 
 $(document).ready(() => {
-    init('svg', 'table', 0.05);
+    init('svg', 'table');
     addPoints(points);
     //	shuffle(points);
     refreshSvg();
+    bindTableSvg();
     simulatedAnnealing(points);
 });
