@@ -197,6 +197,12 @@ function addPath(path) {
         .appendTo($(svg));
 }
 
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; --i) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+}
 
 function calc_sum(path,points){
   let n = points.length;
@@ -271,7 +277,7 @@ function exampleAlgorithm(points) {
     // console.log(sum_ini);
 	*/
 	// 3.模拟退火 随便找两个交换版
-
+	
 	let now=sum_ini,cur=sum_ini,best=sum_ini,bestpath=path;
 	for(let T=10;T>1;T*=0.9999)
 		for(let i=0;i<100;++i){
@@ -280,17 +286,17 @@ function exampleAlgorithm(points) {
 				p=Math.floor(Math.random()*n), q=Math.floor(Math.random()*n);
 			}while(p==q);
 //			console.log(now);
-
+			
 /*			[path[p],path[q]] = [path[q],path[p]];
 			cur=getSumOfDis(path,points);
 			[path[p],path[q]] = [path[q],path[p]];
 */
 //			console.log(cur);
-
+			
 			let cur0=now;
 			if((q+1)%n==p)
 				[p,q]=[q,p]
-
+			
 			if((p+1)%n==q){ // r p q s
 				let r=(p+n-1)%n, s=(q+1)%n;
 				cur0-=distance(path[r],path[p],points);
@@ -304,22 +310,22 @@ function exampleAlgorithm(points) {
 				cur0-=distance(path[p],path[(p+1)%n],points);
 				cur0+=distance(path[(p+n-1)%n],path[q],points);
 				cur0+=distance(path[q],path[(p+1)%n],points);
-
+				
 				cur0-=distance(path[(q+n-1)%n],path[q],points);
 				cur0-=distance(path[q],path[(q+1)%n],points);
 				cur0+=distance(path[(q+n-1)%n],path[p],points);
 				cur0+=distance(path[p],path[(q+1)%n],points);
 			}
-
+			
 //			console.log("cur "+cur);
 //			console.log("cur0 "+cur0);
 //			console.log(cur==cur0);
-
-
+			
+			
 /*			let t0=Math.random(),t1=Math.exp((now - cur) / T);
 			console.log("random "+t0);
 			console.log("exp "+t1);
-*/
+*/			
 			if(Math.random() < Math.exp((now - cur0) / T)){
 				now=cur0;
 				[path[p],path[q]] = [path[q],path[p]]
@@ -327,6 +333,8 @@ function exampleAlgorithm(points) {
 //			console.log(now);
 			if(now<best){
 				console.log("wow");
+				console.log(p);
+				console.log(q);
 				best=now;
 				bestpath=path;
 			}
@@ -337,7 +345,7 @@ function exampleAlgorithm(points) {
 	console.log(sum_ini);
     clearPath();
     addPath(bestpath);
-
+	
     refreshSvg();
 }
 
@@ -345,6 +353,7 @@ function exampleAlgorithm(points) {
 $(document).ready(() => {
     initSvg('svg', 0.05);
     addPoints(points);
+	shuffle(points);
     refreshSvg();
     exampleAlgorithm(points);
 });
