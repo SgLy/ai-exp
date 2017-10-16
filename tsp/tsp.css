@@ -17,8 +17,18 @@ div#table-container {
   vertical-align: top;
   margin-left: 2em;
 }
+div#info .ui.header {
+  margin-bottom: 0.5rem;
+}
 div#info > div.segment > div {
   margin-bottom: 2em;
+}
+div#info > div.segment > div:last-child {
+  margin-bottom: 0;
+}
+div#ans > * {
+  display: inline-block;
+  margin-right: 1ex;
 }
 tr {
   transition: all 0.3s ease;

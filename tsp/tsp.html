@@ -6,7 +6,7 @@
         <link rel="stylesheet" href="tsp.css">
         <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://cdn.bootcss.com/semantic-ui/2.2.13/semantic.min.js"></script>
-        <link href="https://fonts.lug.ustc.edu.cn/css?family=Roboto|Roboto+Mono" rel="stylesheet">
+        <link href="https://fonts.cat.net/css?family=Roboto|Roboto+Mono" rel="stylesheet">
         <script src="tsp.js"></script>
     </head>
     <body>
@@ -27,9 +27,17 @@
           </div>
           <div id="info" class="ui right attached rail">
             <div class="ui left aligned segment">
+              <div id="ans">
+                <h4 class="ui header">Best length</h4>
+                <code>58537</code>
+              </div>
+              <div>
+                <h4 class="ui header">Current best length</h4>
+                <code id="best"></code>
+              </div>
               <div>
                 <h4 class="ui header">Current length</h4>
-                <code id="length"></code>
+                <code id="current"></code>
               </div>
               <div>
                 <h4 class="ui header">Iterations</h4>
@@ -40,7 +48,7 @@
                 <code id="temp"></code>
               </div>
               <div>
-                <h4 class="ui header">Accepted change</h4>
+                <h4 class="ui header">Accepted changes</h4>
                 <code id="changes"></code>
               </div>
               <div>
