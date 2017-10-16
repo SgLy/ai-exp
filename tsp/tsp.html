@@ -2,10 +2,54 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <link href="https://cdn.bootcss.com/semantic-ui/2.2.13/semantic.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="tsp.css">
         <script src="https://cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://cdn.bootcss.com/semantic-ui/2.2.13/semantic.min.js"></script>
+        <link href="https://fonts.lug.ustc.edu.cn/css?family=Roboto|Roboto+Mono" rel="stylesheet">
         <script src="tsp.js"></script>
     </head>
     <body>
-      <svg></svg>
+      <div class="ui center aligned main container">
+        <div id="svg-container" class="ui segment">
+          <svg></svg>
+          <div id="table-container" class="ui left attached rail">
+            <table class="ui compact striped table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>X</th>
+                  <th>Y</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="info" class="ui right attached rail">
+            <div class="ui left aligned segment">
+              <div>
+                <h4 class="ui header">Current length</h4>
+                <code id="length"></code>
+              </div>
+              <div>
+                <h4 class="ui header">Iterations</h4>
+                <code id="iters"></code>
+              </div>
+              <div>
+                <h4 class="ui header">Temperature</h4>
+                <code id="temp"></code>
+              </div>
+              <div>
+                <h4 class="ui header">Accepted change</h4>
+                <code id="changes"></code>
+              </div>
+              <div>
+                <h4 class="ui header">Length improvements</h4>
+                <code id="imprvs"></code>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </body>
 </html>

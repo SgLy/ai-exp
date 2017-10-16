@@ -1,0 +1,28 @@
+body, .ui.header {
+  font-family: 'Roboto'
+}
+code {
+  font-family: 'Roboto Mono'
+}
+div.ui.main.container {
+  margin-top: 2em;
+}
+div#svg-container {
+  padding: 2em;
+  display: inline-block;
+}
+div#table-container {
+  display: inline-block;
+  overflow-y: auto;
+  vertical-align: top;
+  margin-left: 2em;
+}
+div#info > div.segment > div {
+  margin-bottom: 2em;
+}
+tr {
+  transition: all 0.3s ease;
+}
+circle {
+  transition: all 0.3s ease;
+}
