@@ -417,6 +417,6 @@ $(document).ready(() => {
     addPoints(points);
     //	shuffle(points);
     refreshSvg();
-    bindTableSvg();
     simulatedAnnealing(points);
+    bindTableSvg();
 });
