@@ -211,6 +211,13 @@ function calc_sum(path,points){
 function distance(i,j,points){
     return Math.sqrt((points[i].X-points[j].X)*(points[i].X-points[j].X)+(points[i].Y-points[j].Y)*(points[i].Y-points[j].Y));
 }
+function getSumOfDis(path,points){
+	let n=path.length,s=0;
+	for(let i=0;i<n;++i)
+		s+=distance(path[i],path[(i+1)%n],points);
+	return s;
+}
+
 function exampleAlgorithm(points) {
     clearPath();
     let n = points.length;
@@ -224,7 +231,7 @@ function exampleAlgorithm(points) {
     sum_ini += Math.sqrt((points[n-1].X-points[0].X)*(points[n-1].X-points[0].X)+(points[n-1].Y-points[0].Y)*(points[n-1].Y-points[0].Y));
     console.log(sum_ini);
     //默认从0-n-1的序列进行便利
-    let sum = 0;
+/*    let sum = 0;
     //1.n^2顺序领域交换
     for (let i = 0; i < n; ++i)
       for (let j = 0; j < n; ++j)
@@ -262,39 +269,75 @@ function exampleAlgorithm(points) {
     //       }
     // }
     // console.log(sum_ini);
+	*/
+	// 3.模拟退火 随便找两个交换版
+
+	let now=sum_ini,cur=sum_ini,best=sum_ini,bestpath=path;
+	for(let T=10;T>1;T*=0.9999)
+		for(let i=0;i<100;++i){
+			let p=0,q=0;
+			do{
+				p=Math.floor(Math.random()*n), q=Math.floor(Math.random()*n);
+			}while(p==q);
+//			console.log(now);
+
+/*			[path[p],path[q]] = [path[q],path[p]];
+			cur=getSumOfDis(path,points);
+			[path[p],path[q]] = [path[q],path[p]];
+*/
+//			console.log(cur);
+
+			let cur0=now;
+			if((q+1)%n==p)
+				[p,q]=[q,p]
+
+			if((p+1)%n==q){ // r p q s
+				let r=(p+n-1)%n, s=(q+1)%n;
+				cur0-=distance(path[r],path[p],points);
+				cur0-=distance(path[p],path[q],points);
+				cur0-=distance(path[q],path[s],points);
+				cur0+=distance(path[r],path[q],points);
+				cur0+=distance(path[q],path[p],points);
+				cur0+=distance(path[p],path[s],points);
+			}else{
+				cur0-=distance(path[(p+n-1)%n],path[p],points);
+				cur0-=distance(path[p],path[(p+1)%n],points);
+				cur0+=distance(path[(p+n-1)%n],path[q],points);
+				cur0+=distance(path[q],path[(p+1)%n],points);
+
+				cur0-=distance(path[(q+n-1)%n],path[q],points);
+				cur0-=distance(path[q],path[(q+1)%n],points);
+				cur0+=distance(path[(q+n-1)%n],path[p],points);
+				cur0+=distance(path[p],path[(q+1)%n],points);
+			}
+
+//			console.log("cur "+cur);
+//			console.log("cur0 "+cur0);
+//			console.log(cur==cur0);
 
 
-    //3.模拟退火
-    //其中领域搜索算法采用n^2交换
-    let change_num = 0;
-    let pathforsa = []
-    while(change_num < 1000){
-      let numed = 0;
-      let flag = [];
-      for (let i = 0;i<n;i++)
-        flag[i] = 0;
-      while (numed < n){
-        let i = parseInt(Math.random()*(n),10);
-        if (flag[i] == 0) {
-          pathforsa[numed] = i;
-          numed ++;
-          flag[i] = 1;
-        }
-      }
-      for (let i = 0; i < n; ++i)
-        for (let j = 0; j < n; ++j){
-            [pathforsa[i],pathforsa[j]] = [pathforsa[j],pathforsa[i]]
-            sum = calc_sum(pathforsa,points);
-            if (sum < sum_ini) {
-              clearPath();
-              addPath(pathforsa);
-              sum_ini = sum;
-            }else{
-            [pathforsa[j],pathforsa[i]] = [pathforsa[i],pathforsa[j]]
-            }
-      }
-      change_num++;
-    }
+/*			let t0=Math.random(),t1=Math.exp((now - cur) / T);
+			console.log("random "+t0);
+			console.log("exp "+t1);
+*/
+			if(Math.random() < Math.exp((now - cur0) / T)){
+				now=cur0;
+				[path[p],path[q]] = [path[q],path[p]]
+			}
+//			console.log(now);
+			if(now<best){
+				console.log("wow");
+				best=now;
+				bestpath=path;
+			}
+		}
+	console.log("best "+best);
+	console.log("best0 "+getSumOfDis(bestpath,points));
+	console.log(bestpath);
+	console.log(sum_ini);
+    clearPath();
+    addPath(bestpath);
+
     refreshSvg();
 }
 
