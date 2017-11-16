@@ -1,3 +1,3 @@
-tic/semantic linguist-vendored
-tic/semantic/ linguist-vendored
-tic/semantic/* linguist-vendored
+# Treat static file as vendored
+8numbers/jsplumb.js                          linguist-vendored
+8numbers/priority-queue.min.js               linguist-vendored
