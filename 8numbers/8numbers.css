@@ -1,61 +1,55 @@
-html {
-    font-size: 2.5vmin;
+body {
+  overflow: auto;
 }
-.ui.container {
-    padding-top: 4em;
-    position: relative;
+#container {
+  margin-top: 50;
+  margin-left: 100;
+  position: relative;
 }
 .setting {
-    position: absolute;
-    z-index: 100;
-    font-size: 9vmin;
-    width: 1.2em;
-    height: 1.2em;
-    text-align: center;
+  position: absolute;
+  z-index: 100;
+  font-size: 9vmin;
+  width: 1.2em;
+  height: 1.2em;
+  text-align: center;
 }
 .setting>i {
-    cursor: pointer;
-    line-height: 1em;
-    transition: all 0.2s ease;
-    opacity: 0.5;
-}
-.dimmable {
-    width: 60vmin;
-    height: 60vmin;
-    margin: 2em auto;
-    overflow: unset !important;
+  cursor: pointer;
+  line-height: 1em;
+  transition: all 0.2s ease;
+  opacity: 0.5;
 }
 table {
-    width: 100%;
-    height: 100%;
-    border-spacing: 0;
-    text-align: center;
-    box-shadow: 0 0 30px 8px black;
+  width: 80px;
+  height: 80px;
+  border-spacing: 0;
+  text-align: center;
+  box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+}
+.answer {
+  box-shadow: 0 0 10px 5px hsla(120, 100%, 25%, 0.7);
+}
+.answer td.odd {
+  background-color: hsl(120, 50%, 75%);
 }
 td {
-    width: 33.33%;
-    height: 33.33%;
-    transition: all 0.2s ease;
-    position: relative;
-    cursor: pointer;
-}
-td>p {
-    position: absolute;
-    right: 1em;
-    top: 1em;
-    opacity: 0.3;
+  width: 33.33%;
+  height: 33.33%;
+  transition: all 0.2s ease;
 }
 td.even {
-    background-color: white;
+  background-color: white;
 }
 td.odd {
-    background-color: rgb(200, 200 ,200);
+  background-color: hsl(0, 0%, 75%);
 }
-td>i {
-    font-size: 11vmin !important;
+td>code {
+  font-size: 16px !important;
 }
 .ui.header>i.icon {
-    margin-right: 0.25em !important;
-    font-size: 1em;
-    vertical-align: baseline;
+  margin-right: 0.25em !important;
+  font-size: 1em;
+  vertical-align: baseline;
 }
