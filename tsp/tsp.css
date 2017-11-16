@@ -30,6 +30,9 @@ div#ans > * {
   display: inline-block;
   margin-right: 1ex;
 }
+div.ui.left.attached.rail div.ui.button {
+  margin-bottom: 2em;
+}
 tr {
   transition: all 0.3s ease;
 }

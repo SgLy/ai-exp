@@ -13,18 +13,119 @@
     <body>
       <div class="ui center aligned main container">
         <div id="svg-container" class="ui segment">
-          <svg version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>
+          <svg version="1.1" height=500 xmlns="http://www.w3.org/2000/svg"></svg>
           <div id="table-container" class="ui left attached rail">
-            <table class="ui compact striped table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>X</th>
-                  <th>Y</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+            <div class="segment">
+              <div id="hill-climb" class="ui fluid button">Hill Climbing</div>
+              <div id="sa" class="ui fluid button">Simulated Annealing</div>
+              <div class="ui fluid selection dropdown" id="code-dropdown">
+                <input type="text" name="code" hidden>
+                <i class="dropdown icon"></i>
+                <div class="default text">ch130</div>
+                <div class="menu">
+                  <div class="item" data-value="a280">a280</div>
+                  <div class="item" data-value="burma14">burma14</div>
+                  <div class="item" data-value="d2103">d2103</div>
+                  <div class="item" data-value="fl1400">fl1400</div>
+                  <div class="item" data-value="gr202">gr202</div>
+                  <div class="item" data-value="kroA200">kroA200</div>
+                  <div class="item" data-value="lin105">lin105</div>
+                  <div class="item" data-value="pcb442">pcb442</div>
+                  <div class="item" data-value="pr144">pr144</div>
+                  <div class="item" data-value="pr76">pr76</div>
+                  <div class="item" data-value="rl11849">rl11849</div>
+                  <div class="item" data-value="ts225">ts225</div>
+                  <div class="item" data-value="u2319">u2319</div>
+                  <div class="item" data-value="ali535">ali535</div>
+                  <div class="item" data-value="ch130">ch130</div>
+                  <div class="item" data-value="d493">d493</div>
+                  <div class="item" data-value="fl1577">fl1577</div>
+                  <div class="item" data-value="gr229">gr229</div>
+                  <div class="item" data-value="kroB100">kroB100</div>
+                  <div class="item" data-value="lin318">lin318</div>
+                  <div class="item" data-value="pla33810">pla33810</div>
+                  <div class="item" data-value="pr152">pr152</div>
+                  <div class="item" data-value="rat195">rat195</div>
+                  <div class="item" data-value="rl1304">rl1304</div>
+                  <div class="item" data-value="tsp225">tsp225</div>
+                  <div class="item" data-value="u574">u574</div>
+                  <div class="item" data-value="att48">att48</div>
+                  <div class="item" data-value="ch150">ch150</div>
+                  <div class="item" data-value="d657">d657</div>
+                  <div class="item" data-value="fl3795">fl3795</div>
+                  <div class="item" data-value="gr431">gr431</div>
+                  <div class="item" data-value="kroB150">kroB150</div>
+                  <div class="item" data-value="linhp318">linhp318</div>
+                  <div class="item" data-value="pla7397">pla7397</div>
+                  <div class="item" data-value="pr226">pr226</div>
+                  <div class="item" data-value="rat575">rat575</div>
+                  <div class="item" data-value="rl1323">rl1323</div>
+                  <div class="item" data-value="u1060">u1060</div>
+                  <div class="item" data-value="u724">u724</div>
+                  <div class="item" data-value="att532">att532</div>
+                  <div class="item" data-value="d1291">d1291</div>
+                  <div class="item" data-value="dsj1000">dsj1000</div>
+                  <div class="item" data-value="fl417">fl417</div>
+                  <div class="item" data-value="gr666">gr666</div>
+                  <div class="item" data-value="kroB200">kroB200</div>
+                  <div class="item" data-value="nrw1379">nrw1379</div>
+                  <div class="item" data-value="pla85900">pla85900</div>
+                  <div class="item" data-value="pr2392">pr2392</div>
+                  <div class="item" data-value="rat783">rat783</div>
+                  <div class="item" data-value="rl1889">rl1889</div>
+                  <div class="item" data-value="u1432">u1432</div>
+                  <div class="item" data-value="ulysses16">ulysses16</div>
+                  <div class="item" data-value="berlin52">berlin52</div>
+                  <div class="item" data-value="d1655">d1655</div>
+                  <div class="item" data-value="eil101">eil101</div>
+                  <div class="item" data-value="fnl4461">fnl4461</div>
+                  <div class="item" data-value="gr96">gr96</div>
+                  <div class="item" data-value="kroC100">kroC100</div>
+                  <div class="item" data-value="p654">p654</div>
+                  <div class="item" data-value="pr107">pr107</div>
+                  <div class="item" data-value="pr264">pr264</div>
+                  <div class="item" data-value="rat99">rat99</div>
+                  <div class="item" data-value="rl5915">rl5915</div>
+                  <div class="item" data-value="u159">u159</div>
+                  <div class="item" data-value="ulysses22">ulysses22</div>
+                  <div class="item" data-value="bier127">bier127</div>
+                  <div class="item" data-value="d18512">d18512</div>
+                  <div class="item" data-value="eil51">eil51</div>
+                  <div class="item" data-value="gil262">gil262</div>
+                  <div class="item" data-value="kroA100">kroA100</div>
+                  <div class="item" data-value="kroD100">kroD100</div>
+                  <div class="item" data-value="pcb1173">pcb1173</div>
+                  <div class="item" data-value="pr124">pr124</div>
+                  <div class="item" data-value="pr299">pr299</div>
+                  <div class="item" data-value="rd100">rd100</div>
+                  <div class="item" data-value="rl5934">rl5934</div>
+                  <div class="item" data-value="u1817">u1817</div>
+                  <div class="item" data-value="vm1084">vm1084</div>
+                  <div class="item" data-value="brd14051">brd14051</div>
+                  <div class="item" data-value="d198">d198</div>
+                  <div class="item" data-value="eil76">eil76</div>
+                  <div class="item" data-value="gr137">gr137</div>
+                  <div class="item" data-value="kroA150">kroA150</div>
+                  <div class="item" data-value="kroE100">kroE100</div>
+                  <div class="item" data-value="pcb3038">pcb3038</div>
+                  <div class="item" data-value="pr136">pr136</div>
+                  <div class="item" data-value="pr439">pr439</div>
+                  <div class="item" data-value="rd400">rd400</div>
+                  <div class="item" data-value="st70">st70</div>
+                  <div class="item" data-value="u2152">u2152</div>
+                  <div class="item" data-value="vm1748">vm1748</div>
+                </div>
+              </div>
+              <div class="ui divider"></div>
+              <form class="ui fluid form">
+                <div class="field">
+                  <input type="text" id="init-temp" placeholder="Initial temperature">
+                </div>
+                <div class="field">
+                  <input type="text" id="decay" placeholder="Decay rate">
+                </div>
+              </form>
+            </div>
           </div>
           <div id="info" class="ui right attached rail">
             <div class="ui left aligned segment">
