@@ -19,6 +19,9 @@ class Queue {
     dequeue() {
         return this.arr[this.left++];
     }
+    peek() {
+        return this.arr[this.left];
+    }
 }
 
 let set = new Set(); // no class static variable workaround
@@ -30,6 +33,7 @@ class Node {
         this.child = [];
         this.depth = depth;
         this.id = this.levelId = -1;
+        this.expanded = false;
     }
     get up() {
         let n = new Node(this.arr, this, this.depth + 1);
@@ -76,6 +80,15 @@ class Node {
         Node.set.add(this.string);
     }
 
+    eval(final) {
+        return this.depth + this.arr.reduce((s, t, i) => {
+            if (t === 0)
+                return s;
+            let pos = final.arr.findIndex((v) => v === t);
+            return s + Math.abs(i / 3 - pos / 3) + Math.abs(i % 3 - pos % 3);
+        }, 0);
+    }
+
     get html() {
         let res = $('<table><tbody></tbody></table>');
         for (let i = 0; i < 3; ++i) {
@@ -96,6 +109,10 @@ class Node {
         }
         if (this.isAnswer === true)
             res.addClass('answer');
+        if (this.toExpand === true)
+            res.addClass('expanding');
+        if (this.expanded === true)
+            res.addClass('expanded');
         return res;
     }
 }
@@ -107,35 +124,44 @@ let final = new Node([1, 2, 3, 8, 0, 4, 7, 6, 5]);
 let ans;
 let searchedCount = 0;
 let allNodes = [];
-function search() {
-    // let q = new PriorityQueue({ comparator: (a, b) => a.string < b.string });
-    let q = new Queue();
-    q.queue(start);
+let q;
+function next(q) {
+    if (q.length === 0)
+        return;
+    let cur = q.dequeue();
+    cur.toExpand = false;
+    cur.expanded = true;
+    ++searchedCount;
+    cur.visit();
+    if (cur.string === final.string)
+        return cur;
+    [cur.up, cur.down, cur.left, cur.right].forEach((v) => {
+        if (v === undefined || v.visited === true)
+            return;
+        q.queue(v);
+        v.id = allNodes.length;
+        allNodes.push(v);
+    });
 
-    console.time('search');
+    while (q.length > 0 && q.peek().visited === true)
+        q.dequeue();
+    q.peek().toExpand = true;
+}
+
+function searchAll(q) {
     while (q.length !== 0) {
-        let current = q.dequeue(), next;
-        if (current.visited === true)
-            continue;
-        current.id = allNodes.length;
-        allNodes.push(current);
-        ++searchedCount;
-        current.visit();
-        if (current.string === final.string) {
-            console.log('got');
-            ans = current;
+        if (q.length > 1e7) {
+            console.error('open table length > 1e7, maybe something wrong');
             break;
         }
-        if ((next = current.up) !== undefined)
-            q.queue(next);
-        if ((next = current.down) !== undefined)
-            q.queue(next);
-        if ((next = current.left) !== undefined)
-            q.queue(next);
-        if ((next = current.right) !== undefined)
-            q.queue(next);
+        ans = next(q);
+        if (ans !== undefined)
+            break;
     }
-    console.timeEnd('search');
+    endSearch(q);
+}
+
+function endSearch(q) {
     while (ans !== root) {
         ans.isAnswer = true;
         ans = ans.parent;
@@ -145,16 +171,20 @@ function search() {
         current.id = allNodes.length;
         allNodes.push(current);
     }
+}
+
+let container;
+let renderCount = 100;
+function render() {
+    if (container !== undefined)
+        container.remove();
+    container = $('<div id="container"></div>');
     allNodes.sort((a, b) =>
         (a.depth - b.depth) * 1e12
         + (a.parent.id - b.parent.id) * 1e6
         + (a.id - b.id)
     );
-}
-
-let container = $('<div></div>');
-function render(renderLevel) {
-    let nodes = allNodes.filter((n) => n.depth <= renderLevel);
+    let nodes = allNodes.slice(0, renderCount);
     let maxDepth, depthCnt;
     maxDepth = nodes.reduce((m, n) => Math.max(m, n.depth), 0) + 1;
     depthCnt = Array(maxDepth).fill(0);
@@ -162,6 +192,7 @@ function render(renderLevel) {
     nodes.forEach((n) => {
         n.L = 1e12;
         n.R = 0;
+        n.child = [];
     });
     nodes.forEach((n) => {
         if (n.parent === undefined)
@@ -200,7 +231,6 @@ function render(renderLevel) {
             left: n.X,
             top: n.Y
         });
-        return;
     });
     $('body').css({
         width: nodes[0].width * 100 + 200,
@@ -226,32 +256,75 @@ function render(renderLevel) {
     });
 }
 
-function main() {
-    let renderLevel = 10;
+function reset() {
+    set = new Set();
+    start.expanded = undefined;
+    start.expanding = undefined;
+    start.isAnswer = undefined;
+    q.queue(start);
+    allNodes = [start];
+    $('#all, #next').removeClass('disabled');
+    render();
+}
+
+$('#switch').on('click', function() {
+    if ($(this).data('type') === 'astar') {
+        $(this).data('type', 'plain');
+        $(this).text('Switch to A*');
+        q = new Queue();
+    } else {
+        $(this).data('type', 'astar');
+        $(this).text('Switch to plain search');
+        q = new PriorityQueue({
+            comparator: (a, b) => a.eval(final) - b.eval(final)
+        });
+    }
+    $('#type').text($(this).data('type'));
+    reset();
+});
+
+$('#next').on('click', () => {
+    ans = next(q);
+    if (ans !== undefined) {
+        endSearch(q);
+        $('#all, #next').addClass('disabled');
+    }
+    $('#open-len').text(q.length);
+    $('#nodes-cnt').text(allNodes.length);
+    render();
+});
+
+$('#reset').on('click', () => {
+    reset();
+});
+
+$('#all').on('click', () => {
     let p = new Promise((resolve) => {
+        $('.ui.text.loader').text('Searching...');
         $('.ui.page.dimmer').dimmer('show');
-        console.log('Start search...');
         setTimeout(() => {
-            search();
+            searchAll(q);
             resolve();
         }, 1);
     });
-    p.then(() => new Promise((resolve) => {
-        $('.ui.text.loader').text(`Searched ${searchedCount} nodes. Rendering ${renderLevel} levels...`);
+    p = p.then(() => new Promise((resolve) => {
+        $('.ui.text.loader').text(`Searched ${searchedCount} nodes. Rendering ${renderCount} nodes...`);
+        $('#open-len').text(q.length);
+        $('#nodes-cnt').text(allNodes.length);
+        $('#all, #next').addClass('disabled');
         setTimeout(() => {
-            render(renderLevel);
+            render();
             resolve();
-        });
+        }, 1);
     }));
     p.then(() => new Promise(() => {
-        $('.ui.text.loader').text(`Waiting for browser to rendering ${renderLevel} levels...`);
+        $('.ui.text.loader').text(`Waiting for browser to rendering ${renderCount} nodes...`);
         container.ready(() => {
-            console.log('test');
             $('.ui.page.dimmer').dimmer('hide');
         });
     }));
-}
+});
 
 $(() => {
-    main();
+    $('#switch').trigger('click');
 });

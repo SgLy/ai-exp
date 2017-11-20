@@ -1,6 +1,22 @@
 body {
   overflow: auto;
 }
+#buttons {
+  position: absolute;
+  left: 1em;
+  top: 1em;
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+}
+#buttons:hover {
+  opacity: 1;
+}
+#buttons .button {
+  margin-bottom: 1em;
+}
+#buttons .button:last-of-type {
+  margin-bottom: 0;
+}
 #container {
   margin-top: 50;
   margin-left: 100;
@@ -27,12 +43,23 @@ table {
   text-align: center;
   box-shadow: 0 0 10px 2px rgba(0, 0, 0, 0.7);
   cursor: pointer;
+  opacity: 0.7;
 }
 .answer {
+  opacity: 1;
   box-shadow: 0 0 10px 5px hsla(120, 100%, 25%, 0.7);
 }
 .answer td.odd {
   background-color: hsl(120, 50%, 75%);
+}
+.expanding {
+  box-shadow: 0 0 10px 5px hsla(240, 100%, 25%, 0.7);
+}
+.expanding td.odd {
+  background-color: hsl(240, 50%, 75%);
+}
+.expanded {
+  opacity: 1;
 }
 td {
   width: 33.33%;
