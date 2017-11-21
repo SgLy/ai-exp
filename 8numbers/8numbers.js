@@ -24,6 +24,7 @@ class Queue {
     }
 }
 
+const finalArr = [1, 2, 3, 8, 0, 4, 7, 6, 5];
 let set = new Set(); // no class static variable workaround
 class Node {
     constructor(arr, parent, depth) {
@@ -34,6 +35,15 @@ class Node {
         this.depth = depth;
         this.id = this.levelId = -1;
         this.expanded = false;
+        this.eval = this.depth + this.arr.reduce((s, t, i) => {
+            if (t === 0)
+                return s;
+            let pos = finalArr.findIndex((v) => v === t);
+            let x1 = parseInt(i / 3), x2 = parseInt(pos / 3);
+            let y1 = parseInt(i % 3), y2 = parseInt(pos % 3);
+            return s + Math.abs(x1 - x2) + Math.abs(y1 - y2);
+        }, 0);
+        this.updateString();
     }
     get up() {
         let n = new Node(this.arr, this, this.depth + 1);
@@ -41,6 +51,7 @@ class Node {
             return undefined;
         [n.arr[n.zero], n.arr[n.zero - 3]] = [n.arr[n.zero - 3], n.arr[n.zero]];
         n.zero -= 3;
+        n.updateString();
         return n;
     }
     get down() {
@@ -49,6 +60,7 @@ class Node {
             return undefined;
         [n.arr[n.zero], n.arr[n.zero + 3]] = [n.arr[n.zero + 3], n.arr[n.zero]];
         n.zero += 3;
+        n.updateString();
         return n;
     }
     get left() {
@@ -57,6 +69,7 @@ class Node {
             return undefined;
         [n.arr[n.zero], n.arr[n.zero - 1]] = [n.arr[n.zero - 1], n.arr[n.zero]];
         n.zero -= 1;
+        n.updateString();
         return n;
     }
     get right() {
@@ -65,28 +78,20 @@ class Node {
             return undefined;
         [n.arr[n.zero], n.arr[n.zero + 1]] = [n.arr[n.zero + 1], n.arr[n.zero]];
         n.zero += 1;
+        n.updateString();
         return n;
-    }
-    get string() {
-        return this.arr.reduce((s, v) => s + v, '');
     }
     static get set() {
         return set;
+    }
+    updateString() {
+        this.string = this.arr.reduce((s, v) => s + v, '');
     }
     get visited() {
         return Node.set.has(this.string);
     }
     visit() {
         Node.set.add(this.string);
-    }
-
-    eval(final) {
-        return this.depth + this.arr.reduce((s, t, i) => {
-            if (t === 0)
-                return s;
-            let pos = final.arr.findIndex((v) => v === t);
-            return s + Math.abs(i / 3 - pos / 3) + Math.abs(i % 3 - pos % 3);
-        }, 0);
     }
 
     get html() {
@@ -107,31 +112,43 @@ class Node {
             }
             res.append(row);
         }
+        if (this.searchId !== undefined)
+            res.append(`<code>${this.searchId}</code>`);
         if (this.isAnswer === true)
             res.addClass('answer');
         if (this.toExpand === true)
             res.addClass('expanding');
         if (this.expanded === true)
             res.addClass('expanded');
+        res.popup({
+            html: `
+                <b>Evaluation value:</b><code>${this.eval}</code></br>
+                ${this.isAnswer === true ? '<b>This node is in the path to the answer.</b></br>': ''}
+                ${this.expanded === false ? '<b>This node is in Open Table.</br>': ''}
+                ${this.toExpand === true ? '</br><b>This node will be visited next.</b>': ''}
+            `,
+            variation: 'flowing'
+        });
         return res;
     }
 }
 
-let root = new Node(Array(9).fill(0), undefined, -1);
-// let start = new Node([5, 6, 3, 1, 0, 8, 7, 2, 4], root, 0);
-let start = new Node([8, 1, 3, 7, 2, 4, 6, 0, 5], root, 0);
-let final = new Node([1, 2, 3, 8, 0, 4, 7, 6, 5]);
+const root = new Node(Array(9).fill(0), undefined, -1);
+let start = new Node([5, 6, 3, 1, 0, 8, 7, 2, 4], root, 0);
+const final = new Node(finalArr);
+//let start = new Node([8, 1, 3, 7, 2, 4, 6, 0, 5], root, 0);
 let ans;
-let searchedCount = 0;
+let ansLength;
 let allNodes = [];
 let q;
+let searchCnt = 0;
 function next(q) {
     if (q.length === 0)
         return;
     let cur = q.dequeue();
     cur.toExpand = false;
     cur.expanded = true;
-    ++searchedCount;
+    cur.searchId = searchCnt++;
     cur.visit();
     if (cur.string === final.string)
         return cur;
@@ -145,27 +162,35 @@ function next(q) {
 
     while (q.length > 0 && q.peek().visited === true)
         q.dequeue();
-    q.peek().toExpand = true;
+    if (q.length > 0)
+        q.peek().toExpand = true;
 }
 
 function searchAll(q) {
+    console.time('Search');
     while (q.length !== 0) {
-        if (q.length > 1e7) {
-            console.error('open table length > 1e7, maybe something wrong');
-            break;
-        }
+        if (searchCnt % 10000 === 0)
+            console.log(`Queue length: ${q.length}, Searched: ${allNodes.length}, Loop count: ${searchCnt}`);
         ans = next(q);
         if (ans !== undefined)
             break;
     }
+    console.timeEnd('Search');
     endSearch(q);
 }
 
 function endSearch(q) {
-    while (ans !== root) {
-        ans.isAnswer = true;
-        ans = ans.parent;
+    if (ans === undefined) {
+        ansLength = 'No answer.';
+    } else {
+        ansLength = 0;
+        while (ans !== root) {
+            ++ansLength;
+            ans.isAnswer = true;
+            ans = ans.parent;
+        }
     }
+    $('#ans').text(ansLength);
     while (q.length !== 0) {
         let current = q.dequeue();
         current.id = allNodes.length;
@@ -184,14 +209,15 @@ function render() {
         + (a.parent.id - b.parent.id) * 1e6
         + (a.id - b.id)
     );
-    let nodes = allNodes.slice(0, renderCount);
+    let nodes = allNodes.filter((v, i) => i < renderCount || v.isAnswer === true);
     let maxDepth, depthCnt;
     maxDepth = nodes.reduce((m, n) => Math.max(m, n.depth), 0) + 1;
     depthCnt = Array(maxDepth).fill(0);
     nodes.forEach((n) => n.levelId = depthCnt[n.depth]++);
-    nodes.forEach((n) => {
+    allNodes.forEach((n) => {
         n.L = 1e12;
         n.R = 0;
+        n.width = 0;
         n.child = [];
     });
     nodes.forEach((n) => {
@@ -232,7 +258,7 @@ function render() {
             top: n.Y
         });
     });
-    $('body').css({
+    container.css({
         width: nodes[0].width * 100 + 200,
         height: maxDepth * 120 + 100
     });
@@ -256,13 +282,28 @@ function render() {
     });
 }
 
+function generateRandomArray() {
+    let v = Array(9).fill(true);
+    let arr = Array(9);
+    for (let i = 0; i < 9; ++i) {
+        let tmp;
+        do {
+            tmp = parseInt(Math.random() * 9);
+        } while (v[tmp] !== true);
+        v[tmp] = false;
+        arr[i] = tmp;
+    }
+    return arr;
+}
+
 function reset() {
     set = new Set();
-    start.expanded = undefined;
-    start.expanding = undefined;
+    start.expanded = false;
+    start.toExpand = true;
     start.isAnswer = undefined;
     q.queue(start);
     allNodes = [start];
+    searchCnt = 0;
     $('#all, #next').removeClass('disabled');
     render();
 }
@@ -276,7 +317,11 @@ $('#switch').on('click', function() {
         $(this).data('type', 'astar');
         $(this).text('Switch to plain search');
         q = new PriorityQueue({
-            comparator: (a, b) => a.eval(final) - b.eval(final)
+            comparator: (a, b) => {
+                if (a.eval === b.eval)
+                    return a.string - b.string;
+                return a.eval - b.eval;
+            }
         });
     }
     $('#type').text($(this).data('type'));
@@ -308,7 +353,7 @@ $('#all').on('click', () => {
         }, 1);
     });
     p = p.then(() => new Promise((resolve) => {
-        $('.ui.text.loader').text(`Searched ${searchedCount} nodes. Rendering ${renderCount} nodes...`);
+        $('.ui.text.loader').text(`Searched ${allNodes.length} nodes. Rendering ${renderCount} nodes...`);
         $('#open-len').text(q.length);
         $('#nodes-cnt').text(allNodes.length);
         $('#all, #next').addClass('disabled');
@@ -323,6 +368,11 @@ $('#all').on('click', () => {
             $('.ui.page.dimmer').dimmer('hide');
         });
     }));
+});
+
+$('#random').on('click', () => {
+    start = new Node(generateRandomArray(), root, 0);
+    reset();
 });
 
 $(() => {
