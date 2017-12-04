@@ -300,9 +300,8 @@ $(() => {
     $('#code-dropdown').dropdown({
         onChange: (value) => {
             code = `${value}.tsp`;
-            $.get(`http://localhost/data/${code}`, (v) => {
+            $.get(`http:/sgly.tk/tsp/${code}`, (v) => {
                 let data = JSON.parse(v);
-                console.log(data);
                 answer = data.answer;
                 points = data.points;
                 addPoints(data.points);

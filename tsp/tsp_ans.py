@@ -9,7 +9,7 @@ for code, ans in t:
     try:
         with open('data/%s.tsp' % code, 'r') as f:
             data = json.load(f)
-        data = { 'points': data, 'answer': ans }
+        data['answer'] = ans
         with open('data/%s.tsp' % code, 'w') as f:
             json.dump(data, f)
     except Exception as err:

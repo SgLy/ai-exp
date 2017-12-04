@@ -25,7 +25,9 @@ for code in codes:
         s = s.replace('  ', ' ')
     s = s.replace('\n ', '\n')
     data = list(map(lambda u: u.split(' '), s.split('\n')[1: -1]))
-    data = [{ 'ID': d[0], 'X': d[1], 'Y': d[2] } for d in data]
-    data['answer'] = re.findall(ans, r'%s : (\d+)' % code.replace('.tsp', ''))
+    data = {
+        'points': [{ 'ID': d[0], 'X': d[1], 'Y': d[2] } for d in data],
+        'answer': re.findall(ans, r'%s : (\d+)' % code.replace('.tsp', ''))
+    }
     with open(path_join('data', code), 'w') as f:
         json.dump(data, f)
