@@ -1,5 +1,6 @@
 'use strict';
 
+const posInf = 1e10, negInf = -posInf;
 const swap = (a, b) => { [a, b] = [b, a]; };
 
 const SIDES = ['SIDE_BLACK', 'SIDE_RED'];
@@ -41,11 +42,14 @@ let selectedChess;
 class Chess {
     constructor(type, board, position, side) {
         this.type = type;
-        this.moves = Chess.type[type].moves.bind(this);
-        this.attacks = Chess.type[type].attacks.bind(this);
         this.board = board;
         this.position = position;
         this.side = side;
+        this.moves = Chess.type[type].moves.bind(this);
+        this.attacks = Chess.type[type].attacks.bind(this);
+        this.value = Chess.type[type].value.bind(this)();
+        if (this.side === 'SIDE_BLACK')
+            this.value = -this.value;
     }
 
     get element() {
@@ -60,6 +64,9 @@ class Chess {
         return {
             pawn: {
                 name: ['卒', '兵'],
+                value: function() {
+                    return 6 - Math.abs(4 - this.position.y);
+                },
                 moves: function () {
                     let pos = this.position;
                     let forward = this.side === 'SIDE_BLACK' ? 1 : -1;
@@ -91,6 +98,7 @@ class Chess {
             },
             cannon: {
                 name: ['砲', '炮'],
+                value: () => 7,
                 moves: function () {
                     const DIRECTIONS = [[0, 1], [0, -1], [1, 0], [-1, 0]];
                     return DIRECTIONS.reduce((r, d) => {
@@ -127,6 +135,7 @@ class Chess {
             },
             chariot: {
                 name: ['俥', '車'],
+                value: () => 8,
                 moves: function() {
                     const DIRECTIONS = [[0, 1], [0, -1], [1, 0], [-1, 0]];
                     return DIRECTIONS.reduce((r, d) => {
@@ -157,6 +166,7 @@ class Chess {
             },
             knight: {
                 name: ['傌', '馬'],
+                value: () => 6.5,
                 moves: function() {
                     const pos = this.position;
                     let ans = [];
@@ -198,6 +208,7 @@ class Chess {
             },
             bishop: {
                 name: ['相', '象'],
+                value: () => 7,
                 moves: function() {
                     const pos = this.position;
                     let ans = [];
@@ -229,6 +240,7 @@ class Chess {
             },
             guard: {
                 name: ['仕', '士'],
+                value: () => 8,
                 moves: function () {
                     const pos = this.position;
                     let ans = [];
@@ -256,6 +268,7 @@ class Chess {
             },
             king: {
                 name: ['將', '帥'],
+                value: () => 10000,
                 moves: function() {
                     const DIRECTIONS = [[0, 1], [0, -1], [1, 0], [-1, 0]];
                     return DIRECTIONS.reduce((r, d) => {
@@ -288,25 +301,31 @@ class Chess {
 }
 
 class Board {
-    constructor() {
-        this.map = Array(10).fill(0).map(() => Array(9).fill(undefined));
-        this.side = 'SIDE_RED';
-        SIDES.forEach((side) => {
-            this.newChess('chariot', side, 0, 0);
-            this.newChess('knight', side, 0, 1);
-            this.newChess('bishop', side, 0, 2);
-            this.newChess('guard', side, 0, 3);
-            this.newChess('king', side, 0, 4);
-            this.newChess('guard', side, 0, 5);
-            this.newChess('bishop', side, 0, 6);
-            this.newChess('knight', side, 0, 7);
-            this.newChess('chariot', side, 0, 8);
-            this.newChess('cannon', side, 2, 1);
-            this.newChess('cannon', side, 2, 7);
-            [0, 2, 4, 6, 8].forEach((y) => {
-                this.newChess('pawn', side, 3, y);
+    constructor(map, side) {
+        if (map === undefined) {
+            this.map = Array(10).fill(0).map(() => Array(9).fill(undefined));
+            SIDES.forEach((side) => {
+                this.newChess('chariot', side, 0, 0);
+                this.newChess('knight', side, 0, 1);
+                this.newChess('bishop', side, 0, 2);
+                this.newChess('guard', side, 0, 3);
+                this.newChess('king', side, 0, 4);
+                this.newChess('guard', side, 0, 5);
+                this.newChess('bishop', side, 0, 6);
+                this.newChess('knight', side, 0, 7);
+                this.newChess('chariot', side, 0, 8);
+                this.newChess('cannon', side, 2, 1);
+                this.newChess('cannon', side, 2, 7);
+                [0, 2, 4, 6, 8].forEach((y) => {
+                    this.newChess('pawn', side, 3, y);
+                });
             });
-        });
+        } else
+            this.map = map;
+        if (side === undefined)
+            this.side = 'SIDE_RED';
+        else
+            this.side = side;
     }
     newChess(type, side, x, y) {
         if (side === 'SIDE_RED')
@@ -320,8 +339,28 @@ class Board {
         this.map[x1][y1] = undefined;
         this.map[x2][y2].position = newPosition;
     }
+    tryMove(originalPosition, newPosition) {
+        let newBoard = new Board(null, opposite(this.side));
+        let newMap = this.map.map(r => r.map(c => {
+            if (c === undefined)
+                return undefined;
+            return new Chess(c.type, newBoard, c.position, c.side);
+        }));
+        newBoard.map = newMap;
+        newBoard.move(originalPosition, newPosition);
+        return newBoard;
+    }
     flipSide() {
         this.side = opposite(this.side);
+    }
+    get finish() {
+        return this.map.reduce((s, r) =>
+            s || r.findIndex(c => c.type === 'king') !== -1, false);
+    }
+    get value() {
+        return this.map.reduce((sum, r) => r.reduce((sum, c) => {
+            return sum + (c === undefined ? 0 : c.value);
+        }, sum), 0);
     }
 
     get element() {
@@ -368,32 +407,81 @@ class Board {
     }
 }
 
+function aiMove(maxDepth) {
+    let p = new Promise((resolve) => {
+        $('#board').dimmer('show');
+        setTimeout(() => {
+            let {move} = alphabeta(board, maxDepth, negInf, posInf);
+            console.log(move);
+            resolve(move);
+        }, 1);
+    });
+    p.then((m) => new Promise(() => {
+        move(m.original, m.new);
+        $('#board').dimmer('hide');
+    }));
+}
+
+function alphabeta(board, depth, alpha, beta) {
+    if (depth === 0 || board.finished)
+        return { search: board.value, move: undefined };
+    let v = board.side === 'SIDE_RED' ? negInf : posInf;
+    let move = undefined;
+    for (let i = 0; i < board.map.length; ++i)
+        for (let j = 0; j < board.map[i].length; ++j) {
+            let chess = board.map[i][j];
+            if (chess === undefined)
+                continue;
+            if (chess.side !== board.side)
+                continue;
+            let moves = chess.moves().concat(chess.attacks());
+            if (depth === 4)
+                console.log(chess, moves);
+            for (let k = 0; k < moves.length; ++k) {
+                let newBoard = board.tryMove(chess.position, moves[k]);
+                let {search} = alphabeta(newBoard, depth - 1, alpha, beta);
+                if (board.side === 'SIDE_RED') {
+                    if (search > v) {
+                        v = search;
+                        move = { original: chess.position, new: moves[k] };
+                    }
+                    alpha = Math.max(alpha, v);
+                } else {
+                    if (search < v) {
+                        v = search;
+                        move = { original: chess.position, new: moves[k] };
+                    }
+                    beta = Math.min(beta, v);
+                }
+                if (beta <= alpha)
+                    return { search: v, move: move };
+            }
+        }
+    return { search: v, move: move };
+}
+
+function move(oldPos, newPos) {
+    board.move(oldPos, newPos);
+    let chess = $(`[x=${oldPos.x}][y=${oldPos.y}] .chess`).detach();
+    $(`[x=${newPos.x}][y=${newPos.y}] .chess`).remove();
+    $(`[x=${newPos.x}][y=${newPos.y}]`).append(chess);
+    $('.cell').removeClass('movable attackable');
+    $('.chess').removeClass('selected');
+    board.flipSide();
+    // $('#board').css({
+    //     transform: `rotate(${board.side === 'SIDE_RED' ? 0 : 180}deg)`
+    // });
+}
+
 let board = new Board();
 $(() => {
     board.element.appendTo($('.container'));
-    $('#board').on('click', '.movable.cell', function() {
-        board.move(selectedChess.position, $(this).data('position'));
-        let chess = $('.selected.chess').detach();
-        $(this).append(chess);
-        $('.cell').removeClass('movable attackable');
-        $('.chess').removeClass('selected');
-        board.flipSide();
-        $('#board').css({
-            transform: `rotate(${board.side === 'SIDE_RED' ? 0 : 180}deg)`
-        });
-    });
-
-    $('#board').on('click', '.attackable.cell', function () {
-        board.move(selectedChess.position, $(this).data('position'));
-        let chess = $('.selected.chess').detach();
-        $('.chess', this).remove();
-        $(this).append(chess);
-        $('.cell').removeClass('movable attackable');
-        $('.chess').removeClass('selected');
-        board.flipSide();
-        $('#board').css({
-            transform: `rotate(${board.side === 'SIDE_RED' ? 0 : 180}deg)`
-        });
+    aiMove(4);
+    let dimmerLoader = $('<div class="ui text loader">AI thinking...</div>');
+    $('#board').dimmer('add content', dimmerLoader);
+    $('#board').on('click', '.movable.cell, .attackable.cell', function() {
+        move(selectedChess.position, $(this).data('position'));
+        aiMove(4);
     });
 
     $('#board').on('click', '.chess', function () {
