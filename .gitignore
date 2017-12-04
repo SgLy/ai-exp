@@ -3,3 +3,6 @@ node_modules
 
 # tsp data
 tsp/data
+
+# vscode
+.vscode
