@@ -8,8 +8,8 @@
 }
 #board {
     padding: 0.5em 0.45em;
-    width: 36em;
-    height: 40em;
+    width: 81vmin;
+    height: 90vmin;
     display: flex;
     flex-flow: row wrap;
     box-sizing: content-box;
@@ -20,14 +20,14 @@
     transition: transform 2s cubic-bezier(0.65, 0.05, 0.36, 1);
 }
 .cell {
-    height: 4rem;
-    width: 4rem;
+    height: 9vmin;
+    width: 9vmin;
     display: flex;
     align-items: center;
     justify-content: space-evenly;
     position: relative;
     z-index: 1;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 .cell.movable {
     background-color: #ffcc80;
@@ -37,13 +37,16 @@
     background-color: #FFAB91;
     cursor: pointer;
 }
+.cell.selected {
+    z-index: 3;
+}
 .chess {
-    font-size: 1.75em;
+    font-size: 3.5vmin;
     font-family: 'Noto Serif CJK TC', serif;
     font-weight: 600;
-    height: 3.5rem;
-    width: 3.5rem;
-    line-height: 3.5rem;
+    height: 8vmin;
+    width: 8vmin;
+    line-height: 8vmin;
     border-radius: 50%;
     text-align: center;
     color: white;
@@ -54,7 +57,7 @@
 .chess.floating {
     box-shadow: 0 0 10px 0px black;
 }
-.chess.selected {
+.cell.selected .chess {
     box-shadow: 0 0 10px 0px black;
     transform: scale(1.2, 1.2) translateZ(-10px);
 }
@@ -135,4 +138,38 @@
 .cross>.left {
     left: 20%;
     border-right: 1px solid black;
+}
+
+.settings {
+    position: absolute;
+    right: 2rem;
+    top: 1rem;
+    font-size: 4em;
+    width: 4rem;
+    display: flex;
+    flex-direction: column;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+}
+.settings:hover {
+    opacity: 1;
+}
+.settings i.icon {
+    margin: 0;
+    line-height: 1em;
+    margin-top: 10px;
+}
+.settings i.exchange.icon {
+    margin-top: 1em;
+}
+
+.info {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+}
+.info:hover {
+    opacity: 1;
 }

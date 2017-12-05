@@ -1,7 +1,6 @@
 'use strict';
 
 const posInf = 1e10, negInf = -posInf;
-const swap = (a, b) => { [a, b] = [b, a]; };
 
 const SIDES = ['SIDE_BLACK', 'SIDE_RED'];
 Object.freeze(SIDES);
@@ -407,22 +406,29 @@ class Board {
     }
 }
 
+let searchNode, pruneCnt;
 function aiMove(maxDepth) {
     let p = new Promise((resolve) => {
         $('#board').dimmer('show');
         setTimeout(() => {
+            searchNode = pruneCnt = 0;
             let {move} = alphabeta(board, maxDepth, negInf, posInf);
-            console.log(move);
             resolve(move);
-        }, 1);
+        }, 10);
     });
     p.then((m) => new Promise(() => {
         move(m.original, m.new);
         $('#board').dimmer('hide');
+        $('#search').text(searchNode);
+        $('#prune').text(pruneCnt);
+        setTimeout(() => {
+            rotateBoard();
+        }, 200);
     }));
 }
 
 function alphabeta(board, depth, alpha, beta) {
+    ++searchNode;
     if (depth === 0 || board.finished)
         return { search: board.value, move: undefined };
     let v = board.side === 'SIDE_RED' ? negInf : posInf;
@@ -434,9 +440,7 @@ function alphabeta(board, depth, alpha, beta) {
                 continue;
             if (chess.side !== board.side)
                 continue;
-            let moves = chess.moves().concat(chess.attacks());
-            if (depth === 4)
-                console.log(chess, moves);
+            let moves = chess.attacks().concat(chess.moves());
             for (let k = 0; k < moves.length; ++k) {
                 let newBoard = board.tryMove(chess.position, moves[k]);
                 let {search} = alphabeta(newBoard, depth - 1, alpha, beta);
@@ -453,13 +457,16 @@ function alphabeta(board, depth, alpha, beta) {
                     }
                     beta = Math.min(beta, v);
                 }
-                if (beta <= alpha)
+                if (beta <= alpha) {
+                    ++pruneCnt;
                     return { search: v, move: move };
+                }
             }
         }
     return { search: v, move: move };
 }
 
+let rotate = true;
 function move(oldPos, newPos) {
     board.move(oldPos, newPos);
     let chess = $(`[x=${oldPos.x}][y=${oldPos.y}] .chess`).detach();
@@ -468,19 +475,27 @@ function move(oldPos, newPos) {
     $('.cell').removeClass('movable attackable');
     $('.chess').removeClass('selected');
     board.flipSide();
-    // $('#board').css({
-    //     transform: `rotate(${board.side === 'SIDE_RED' ? 0 : 180}deg)`
-    // });
 }
 
-let board = new Board();
-$(() => {
+function rotateBoard() {
+    if (rotate)
+        $('#board').css({
+            transform: `rotate(${board.side === 'SIDE_RED' ? 0 : 180}deg)`
+        });
+}
+
+let firstHand = false;
+let board;
+function reset() {
+    board = new Board();
     board.element.appendTo($('.container'));
-    aiMove(4);
-    let dimmerLoader = $('<div class="ui text loader">AI thinking...</div>');
+    if (firstHand)
+        aiMove(4);
+    let dimmerLoader = $('<div class="ui text loader"></div>');
     $('#board').dimmer('add content', dimmerLoader);
     $('#board').on('click', '.movable.cell, .attackable.cell', function() {
         move(selectedChess.position, $(this).data('position'));
+        rotateBoard();
         aiMove(4);
     });
 
@@ -488,10 +503,10 @@ $(() => {
         let chess = $(this).data('chess');
         if (chess.side !== chess.board.side)
             return;
-        $(this).toggleClass('selected');
-        $('.chess').not(this).removeClass('selected');
+        $(this).parent().toggleClass('selected');
+        $('.chess').not(this).parent().removeClass('selected');
         $('.cell').removeClass('movable attackable');
-        if ($(this).hasClass('selected')) {
+        if ($(this).parent().hasClass('selected')) {
             selectedChess = chess;
             chess.moves().forEach(p => {
                 $(`[x=${p.x}][y=${p.y}]`).addClass('movable');
@@ -510,5 +525,26 @@ $(() => {
         if (chess.side !== chess.board.side)
             return;
         $(this).removeClass('floating');
+    });
+}
+
+$(() => {
+    reset();
+    $('#reset').on('click', () => {
+        $('#board').remove();
+        reset();
+    });
+
+    $('#rotate').on('click', () => {
+        rotate = !rotate;
+        $('#rotate').toggleClass('grey');
+    });
+
+    $('#exchange').on('click', () => {
+        firstHand = !firstHand;
+        $('.laptop.icon').addClass(firstHand ? 'red' : 'black');
+        $('.laptop.icon').removeClass(firstHand ? 'black' : 'red');
+        $('.user.icon').addClass(firstHand ? 'black' : 'red');
+        $('.user.icon').removeClass(firstHand ? 'red' : 'black');
     });
 });
