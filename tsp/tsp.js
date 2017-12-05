@@ -314,6 +314,7 @@ function main() {
 }
 //4.遗传算法
 function inbo(flag,n){
+  flag.spice(0,flag.length);
   for (let i = 0;i<n;i++)
     flag.push(0);
 }
@@ -343,6 +344,32 @@ function jiaocha(dad,mom,jiaocha){
   let mm  = 0;
   let flag = [];
   inbo(flag);
+  while (mm = 0){
+    mm = 1;
+    for (let i = 0;i<dad.length;i++)
+    if (flag[dad[i]] == 0)
+        flag[dad[i]] = 1;
+    else {
+      mm = 0;
+      let re = dad[i]; let rer;
+      for (let j = 0;j<dad.length;j++)
+        if (dad[j] = re) {rer = j;break;}
+      dad[i] = mom[rer];
+    }
+    inbo(flag);
+    for (let i = 0;i<mom.length;i++)
+    if (flag[mom[i]] == 0)
+        flag[mom[i]] = 1;
+    else {
+      mm = 0;
+      let re = mom[i]; let rer;
+      for (let j = 0;j<mom.length;j++)
+        if (mom[j] = re) {rer = j;break;}
+      mom[i] = dad[rer];
+    }
+  }
+  nowposeter.push(mom);
+  nowposter.push(dad);
 }
 function GAag(points){
   const pc = 0.9;
@@ -404,7 +431,15 @@ function GAag(points){
     son[GAcalc].push(nowposter);
     nowposter.spice(0,nowposter.length);
   }
-
+  let minn = getDistanceSum(son[GAcalc-1][0]);
+  let ppid = 0;
+  for (let i = 1;i<son[GAcalc-1].length;i++){
+    let mmid = getDistanceSum(son[GAcalc-1][i]);
+    if (mmid < minn) {minn = mid; ppid = i;}
+  }
+  path = son[GAcalc-1][ppid];
+  console.log('Best route: ' + minn);
+  //怎么用 update?
 }
 
 $(() => {
