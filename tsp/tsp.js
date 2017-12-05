@@ -5,10 +5,10 @@
 // SOURCE  : tsplib
 // ORIGIN  : http://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp
 let points;
+const answer = 58537;
 let svg, table, chart;
 let drawRatio;
 let offsetX, offsetY;
-let answer;
 
 function init(svgSelector = 'svg', tableSelector = 'table', chartSelector = 'canvas') {
     svg = svgSelector;
@@ -23,26 +23,21 @@ function init(svgSelector = 'svg', tableSelector = 'table', chartSelector = 'can
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 fill: false,
                 borderColor: 'rgba(255, 99, 132, 1)',
-                pointRadius: 0,
-                lineTension: 0
+                pointRadius: 0
             }, {
                 label: 'Current length',
                 data: [],
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 fill: false,
                 borderColor: 'rgba(54, 162, 235, 1)',
-                pointRadius: 0,
-                lineTension: 0
-
+                pointRadius: 0
             }, {
                 label: 'Answer',
                 data: [],
                 backgroundColor: 'rgba(255, 206, 86, 0.2)',
                 fill: false,
                 borderColor: 'rgba(255, 206, 86, 1)',
-                pointRadius: 0,
-                lineTension: 0
-
+                pointRadius: 0
             }]
         },
         options: {
@@ -87,9 +82,9 @@ function addPoints(points) {
         width: (maxX - minX) * drawRatio + 20,
         height: (maxY - minY) * drawRatio + 20
     });
-    $(svg).html('');
+    $(table).children('tbody').remove();
+    $('<tbody></tbody>').appendTo($(table));
     $.each(points, (index, value) => addPoint(value));
-    $('#ans>code').text(answer);
 }
 function clearPoints() {
     $(svg).children('circle').remove();
@@ -134,7 +129,7 @@ function update(path, best, current, iters, temp, changes, imprvs) {
     $('#imprvs').html(imprvs);
     refreshSvg();
 
-    chart.data.labels.push(iters);
+    chart.data.labels.push(iters / 100000);
     chart.data.datasets[0].data.push(best);
     chart.data.datasets[1].data.push(current);
     chart.data.datasets[2].data.push(answer);
@@ -153,22 +148,8 @@ Array.prototype.reverse = function(left, right) {
 };
 
 let sqr = (x) => x * x;
-let calcDistance = (i, j) =>
+let distance = (i, j) =>
     Math.sqrt(sqr(points[i].X - points[j].X) + sqr(points[i].Y - points[j].Y));
-let distanceBuffer;
-let distance = (i, j) => distanceBuffer[i][j];
-// let distance = (i, j) => calcDistance(i, j);
-function calcDistanceBuffer() {
-    let n = points.length;
-    distanceBuffer = new Array(n);
-    for (let i = 0; i < n; ++i) {
-        distanceBuffer[i] = new Array(n);
-        distanceBuffer[i][i] = 0;
-    }
-    for (let i = 0; i < n; ++i)
-        for (let j = i + 1; j < n; ++j)
-            distanceBuffer[i][j] = distanceBuffer[j][i] = calcDistance(i, j);
-}
 function getDistanceSum(path) {
     let n = path.length, s = 0;
     for(let i = 0; i < n; ++i)
@@ -176,38 +157,73 @@ function getDistanceSum(path) {
     return s;
 }
 
-let init_temp = 200;
-let decay = 0.99;
+//默认从0-n-1的序列进行便利
+/*    let sum = 0;
+//1.n^2顺序领域交换
+    for (let i = 0; i < n; ++i)
+      for (let j = 0; j < n; ++j)
+      if (j != i){
+          [path[i],path[j]] = [path[j],path[i]]
+          sum = getDistanceSum(path,points);
+          if (sum < sum_ini) {
+            clearPath();
+            setPath(path);
+            sum_ini = sum;
+          }else{
+          [path[j],path[i]] = [path[i],path[j]]
+          }
+      }
+    console.log(sum_ini);
+//2.1000次随机领域搜索
 
-function simulatedAnnealing(points, isSA) {
-    chart.data.labels = [];
-    chart.data.datasets[0].data = [];
-    chart.data.datasets[1].data = [];
-    chart.data.datasets[2].data = [];
-    chart.update();
+// let num = 0;
+//
+// let i = parseInt(Math.random()*(n),10);
+// let j = parseInt(Math.random()*(n),10);
+// console.log(i);
+// console.log(j);
+// while (num < 1){
+//       let i = parseInt(Math.random()*(n),10);
+//       let j = parseInt(Math.random()*(n),10);
+//       [path[i],path[j]] = [path[j],path[i]]
+//       sum = getDistanceSum(path,points);
+//       console.log(sum)
+//       if (sum < sum_ini) {
+//         clearPath();
+//         setPath(path);
+//         num += 1;
+//         sum_ini = sum;
+//       }
+// }
+// console.log(sum_ini);
+*/
 
+
+
+// 3.模拟退火 随便找两个交换版
+function simulatedAnnealing(points) {
     let n = points.length;
     let path = [];
     for (let i = 0; i < n; ++i)
         path.push(i);
     let sum = getDistanceSum(path);
     let now = sum, best = sum, bestpath = path.slice(0);
-    let changes = 0, imprvs = 0, iters = 0;
+    let changes = 0, imprvs = 0;
     let p = new Promise((resolve) => { resolve(); });
-    for (let T = init_temp, i = 0; T > 1; T *= decay, ++i)
+    for (let T = 200, i = 0; T > 1; T *= 0.95, ++i)
         p = p.then(() => new Promise((resolve) => {
             setTimeout(() => {
+                let iters = i;
                 best = getDistanceSum(bestpath);
                 now = getDistanceSum(path);
-                let nextIter = 10000;
-                update(bestpath, best, now, iters, T, changes, imprvs);
-                iters += nextIter;
+                update(bestpath, best, now, iters * 100000, T, changes, imprvs);
                 console.time('loop');
-                for (let i = 0; i < nextIter; ++i) {
-                    let p = Math.floor(Math.random() * n);
-                    let q = Math.floor(Math.random() * n);
-                    if (p == q)
-                        q = (p + 1) % n;
+                for (let i = 0; i < 5000; ++i) {
+                    let p = 0, q = 0;
+                    do {
+                        p = Math.floor(Math.random() * n);
+                        q = Math.floor(Math.random() * n);
+                    } while (p == q);
                     // console.log(now);
 
                     // [path[p],path[q]] = [path[q],path[p]];
@@ -262,7 +278,7 @@ function simulatedAnnealing(points, isSA) {
                     // let t0=Math.random(),t1=Math.exp((now - cur) / T);
                     // console.log("random "+t0);
                     // console.log("exp "+t1);
-                    if (cur < now || (isSA && Math.random() < Math.exp((now - cur) / T))) {
+                    if (cur < now || Math.random() < Math.exp((now - cur) / T)) {
                         now = cur;
                         if (type === 1)
                             [path[p], path[q]] = [path[q], path[p]];
@@ -284,30 +300,117 @@ function simulatedAnnealing(points, isSA) {
             }, 1);
         }));
     p.then(() => { console.log('Best route: ' + bestpath); });
+    // console.log('best0 '+getDistanceSum(bestpath,points));
+    // console.log(bestpath);
+    // console.log(sum);
 }
 
-let code = 'ch130';
-$(() => {
+function main() {
     init('svg', 'table', 'canvas');
-    $('#sa').on('click', () => { simulatedAnnealing(points, true); });
-    $('#hill-climb').on('click', () => { simulatedAnnealing(points, false); });
-    $('#init-temp').on('change', function() {
-        init_temp = $(this).val();
-    });
-    $('#decay').on('change', function() {
-        decay = $(this).val();
-    });
-    $('#code-dropdown').dropdown({
-        onChange: (value) => {
-            code = `${value}.tsp`;
-            $.get(`http:/sgly.tk/tsp/${code}`, (v) => {
-                let data = JSON.parse(v);
-                answer = data.answer;
-                points = data.points;
-                addPoints(data.points);
-                calcDistanceBuffer();
-                refreshSvg();
-            });
-        }
+    addPoints(points);
+    refreshSvg();
+    simulatedAnnealing(points);
+    bindTableSvg();
+}
+//4.遗传算法
+function inbo(flag,n){
+  for (let i = 0;i<n;i++)
+    flag.push(0);
+}
+function suitvalue(path){
+  return 1/getDistanceSum(path);
+}
+function calcweight(nowposter,weight){
+  let sum = 0;
+  for (let i = 0;i<nowposter.length;i++){
+    weight[i] = suitvalue(nowposter[i]);
+    sum += weight[i];
+  };
+  for (let i = 0;i<weight.length;i++)
+    weight[i] = weight[i] / sum;
+}
+function jiaocha(dad,mom,jiaocha){
+  let p = 0; let q = 0;
+  do{
+    p = Math.floor(Math.random() * n);
+    q = Math.floor(Math.random() * n);
+  }while (p == q);
+  if (p > q) {let mid = p; p = q; q = mid;}
+  let son1 = [];
+  let son2 = [];
+  for (let i = p;i<q;i++){
+    let mid = dad[i]; dad[i] = mom[i];mom[i] = mid;}
+  let mm  = 0;
+  let flag = [];
+  inbo(flag);
+}
+function GAag(points){
+  const pc = 0.9;
+  const pm = 0.01;
+  let n = points.length;
+  let path = [];
+  for (let i = 0;i<n;i++)
+    path.push(i);
+  let GAcalc = 0;
+  let son = [];
+  let nowposter = [];
+  nowposter.push(path);
+  path.spice(0,path.length);
+  for (let i = 0;i<n;i++)
+    path.push(n-1-i);
+  nowposter.push(path);
+  son.push(nowposter);
+  nowposter.spice(0,nowposter.length);
+  //son 是存储所有的子代数组
+  let weight = [];
+  whiel (GAcalc < 1000){
+    calcweight(son[GAcalc],weight);
+    let jiaochasize = Math.round(son[GAcalc]*pc);
+    let bianyiszie = Math.round(son[GAcalc]*pm);
+    let bianyinownum = 0;
+    for (bianyinownum;bianyinownum<bianyiszie;bianyinownum++){
+      let p =Math.random();
+      let now = 0; let nowsum = weight[now];
+      while(nowsum<p){
+        now++;
+        nowsum+=weight[now];
+      }
+      let nowpath = son[GAcalc][now];
+      do{
+        p = Math.floor(Math.random() * n);
+        q = Math.floor(Math.random() * n);
+      }while (p == q);
+      [p,q] = [q,p]
+      nowposter.push(nowpath);
+    }
+    for (let i = 0; i< jiaochasize;i++){
+      let p =Math.random();
+      let now = 0; let nowsum = weight[now];
+      while(nowsum<p){
+        now++;
+        nowsum+=weight[now];
+      }
+      let Dad = now;
+      let p =Math.random();
+      let now = 0; let nowsum = weight[now];
+      while(nowsum<p){
+        now++;
+        nowsum+=weight[now];
+      }
+      let Mom = now;
+      jiaocha(son[GAcalc][Dad],son[GAcalc][Mom],nowposter);
+    }
+    GAcalc++;
+    son[GAcalc].push(nowposter);
+    nowposter.spice(0,nowposter.length);
+  }
+
+}
+
+$(() => {
+    const code = 'pr144.tsp';
+    $.get(`http://172.18.187.134/data/${code}`, (v) => {
+        points = JSON.parse(v);
+        main();
     });
 });
