@@ -338,14 +338,19 @@ class Board {
         this.map[x1][y1] = undefined;
         this.map[x2][y2].position = newPosition;
     }
-    tryMove(originalPosition, newPosition) {
-        let newBoard = new Board(null, opposite(this.side));
+    get clone() {
+        let newBoard = new Board(null, this.side);
         let newMap = this.map.map(r => r.map(c => {
             if (c === undefined)
                 return undefined;
             return new Chess(c.type, newBoard, c.position, c.side);
         }));
         newBoard.map = newMap;
+        return newBoard;
+    }
+    tryMove(originalPosition, newPosition) {
+        let newBoard = this.clone;
+        newBoard.side = opposite(newBoard.side);
         newBoard.move(originalPosition, newPosition);
         return newBoard;
     }
@@ -405,6 +410,7 @@ class Board {
         return res;
     }
 }
+let history = [];
 
 let searchNode, pruneCnt;
 function aiMove(maxDepth) {
@@ -468,6 +474,7 @@ function alphabeta(board, depth, alpha, beta) {
 
 let rotate = true;
 function move(oldPos, newPos) {
+    history.push(board.clone);
     board.move(oldPos, newPos);
     let chess = $(`[x=${oldPos.x}][y=${oldPos.y}] .chess`).detach();
     $(`[x=${newPos.x}][y=${newPos.y}] .chess`).remove();
@@ -475,6 +482,12 @@ function move(oldPos, newPos) {
     $('.cell').removeClass('movable attackable');
     $('.chess').removeClass('selected');
     board.flipSide();
+}
+
+function withdraw() {
+    let oldBoard = history.pop();
+    $('#board').remove();
+    reset(oldBoard);
 }
 
 function rotateBoard() {
@@ -486,8 +499,11 @@ function rotateBoard() {
 
 let firstHand = false;
 let board;
-function reset() {
-    board = new Board();
+function reset(_board) {
+    if (_board === undefined)
+        board = new Board();
+    else
+        board = _board;
     board.element.appendTo($('.container'));
     if (firstHand)
         aiMove(4);
