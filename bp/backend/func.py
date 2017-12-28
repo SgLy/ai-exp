@@ -10,7 +10,7 @@ def _acc(_labels, labels):
     return (count + 0.0) / len(labels)
 
 
-def train(net, images, labels, num_iters):
+def train(net, images, labels, num_iters, save_file = False):
     image_len = len(images)
     index = 0 # index of images
     batch_size = net.batch_size
@@ -30,9 +30,14 @@ def train(net, images, labels, num_iters):
 
         loss = net.train_batch(input_img, input_label)
 
-        _labels = [np.argmax(i) for i in net.logits]
-        acc = _acc(_labels, input_label)
-        print("Iteration {}: loss: {} acc:{}".format(i, loss, acc))
+        if i % 10 == 0:
+            _labels = [np.argmax(i) for i in net.logits]
+            acc = _acc(_labels, input_label)
+            print("Iteration {}: loss: {} acc:{}".format(i, loss, acc))
+
+        if save_file and i % 500 == 0:
+            net.save(save_file)
+            print("Model saved.")
 
 def eval(net, images, labels):
     _labels = net.eval(images)

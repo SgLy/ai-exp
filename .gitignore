@@ -9,6 +9,9 @@ tsp/data
 
 # bp dataset
 bp/backend/mnist/
+# bp saved model
+bp/backend/saved/
+
 
 # python
 
