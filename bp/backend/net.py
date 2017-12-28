@@ -72,10 +72,11 @@ class Net:
             for i in range(nrow):
                 for j in range(ncol):
                     for k in range(self.batch_size):
-                        grad[i][j] += self.lr * self.gradients[-1][k][j] * \
+                        grad[i][j] += self.gradients[-1][k][j] * \
                                 g_active(M_1[k][j]) * M[k][i]
-                    # apply gradient to weights
-                    self.weights[w][i][j] -= self.lr * grad[i][j]
+
+            # apply gradient to weights
+            self.weights[w] -= self.lr * grad
             
             # gradients for outputs
             grad = np.zeros([self.batch_size, nrow])
@@ -86,7 +87,7 @@ class Net:
                                 g_active(M_1[i][k]) * W[j][k]
 
             self.gradients.append(grad)
-        self.gradients = self.gradients.reverse()
+        # self.gradients = self.gradients.reverse()
 
     def _loss(self, batch_label):
         m = len(self.logits)
