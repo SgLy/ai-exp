@@ -20,10 +20,10 @@ div#table-container {
 div#info .ui.header {
   margin-bottom: 0.5rem;
 }
-div#info > div.segment > div {
+div#info > div.segment div {
   margin-bottom: 2em;
 }
-div#info > div.segment > div:last-child {
+div#info > div.segment > div > div:last-child {
   margin-bottom: 0;
 }
 div#ans > * {

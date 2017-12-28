@@ -18,7 +18,7 @@
             <div class="segment">
               <div id="hill-climb" class="ui fluid button">Hill Climbing</div>
               <div id="sa" class="ui fluid button">Simulated Annealing</div>
-              <div id="GA" class="ui fluid button">GA algorithm</div>
+              <div id="ga" class="ui fluid button">Genetic Algorithm</div>
               <div class="ui fluid selection dropdown" id="code-dropdown">
                 <input type="text" name="code" hidden>
                 <i class="dropdown icon"></i>
@@ -139,24 +139,36 @@
                 <code id="best"></code>
               </div>
               <div>
-                <h4 class="ui header">Current length</h4>
-                <code id="current"></code>
+                <h4 class="ui header">Error</h4>
+                <code id="error"></code>
               </div>
-              <div>
-                <h4 class="ui header">Iterations</h4>
-                <code id="iters"></code>
+              <div class="sa-info">
+                <div>
+                  <h4 class="ui header">Current length</h4>
+                  <code id="current"></code>
+                </div>
+                <div>
+                  <h4 class="ui header">Iterations</h4>
+                  <code id="iters"></code>
+                </div>
+                <div>
+                  <h4 class="ui header">Temperature</h4>
+                  <code id="temp"></code>
+                </div>
+                <div>
+                  <h4 class="ui header">Accepted changes</h4>
+                  <code id="changes"></code>
+                </div>
+                <div>
+                  <h4 class="ui header">Length improvements</h4>
+                  <code id="imprvs"></code>
+                </div>
               </div>
-              <div>
-                <h4 class="ui header">Temperature</h4>
-                <code id="temp"></code>
-              </div>
-              <div>
-                <h4 class="ui header">Accepted changes</h4>
-                <code id="changes"></code>
-              </div>
-              <div>
-                <h4 class="ui header">Length improvements</h4>
-                <code id="imprvs"></code>
+              <div class="ga-info">
+                <div>
+                  <h4 class="ui header">Generations</h4>
+                  <code id="gen"></code>
+                </div>
               </div>
             </div>
           </div>

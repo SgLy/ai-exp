@@ -1,14 +1,15 @@
 'use strict';
 
 /* global Chart */
+/* eslint-disable no-console */
 
 // SOURCE  : tsplib
 // ORIGIN  : http://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp
 let points;
-const answer = 58537;
 let svg, table, chart;
 let drawRatio;
 let offsetX, offsetY;
+let answer;
 
 function init(svgSelector = 'svg', tableSelector = 'table', chartSelector = 'canvas') {
     svg = svgSelector;
@@ -18,26 +19,29 @@ function init(svgSelector = 'svg', tableSelector = 'table', chartSelector = 'can
         data: {
             labels: [],
             datasets: [{
-                label: 'Current best length',
+                label: 'Answer',
                 data: [],
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 fill: false,
                 borderColor: 'rgba(255, 99, 132, 1)',
-                pointRadius: 0
+                pointRadius: 0,
+                lineTension: 0
             }, {
-                label: 'Current length',
+                label: 'Current best length',
                 data: [],
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 fill: false,
                 borderColor: 'rgba(54, 162, 235, 1)',
-                pointRadius: 0
+                pointRadius: 0,
+                lineTension: 0
             }, {
-                label: 'Answer',
+                label: 'Current length',
                 data: [],
                 backgroundColor: 'rgba(255, 206, 86, 0.2)',
                 fill: false,
                 borderColor: 'rgba(255, 206, 86, 1)',
-                pointRadius: 0
+                pointRadius: 0,
+                lineTension: 0
             }]
         },
         options: {
@@ -49,6 +53,7 @@ function init(svgSelector = 'svg', tableSelector = 'table', chartSelector = 'can
         }
     });
     $('#ans code').html(answer);
+    $('.ga-info').hide();
 }
 function refreshSvg() {
     $('svg').html($('svg').html());
@@ -82,12 +87,9 @@ function addPoints(points) {
         width: (maxX - minX) * drawRatio + 20,
         height: (maxY - minY) * drawRatio + 20
     });
-    $(table).children('tbody').remove();
-    $('<tbody></tbody>').appendTo($(table));
+    $(svg).html('');
     $.each(points, (index, value) => addPoint(value));
-}
-function clearPoints() {
-    $(svg).children('circle').remove();
+    $('#ans>code').text(answer);
 }
 function clearPath() {
     $(svg).children('path').remove();
@@ -104,35 +106,18 @@ function setPath(path) {
         })
         .prependTo($(svg));
 }
-function bindTableSvg() {
-    for (let i = 0; i < points.length; ++i)
-        $(`[row-id=${i}]`)
-            .off('mouseenter')
-            .on('mouseenter', function () {
-                $(`[point-id=${i}]`).attr('r', 2 * 2.5);
-                $(this).css('box-shadow', 'inset 0 0 1px 1px black');
-            })
-            .off('mouseleave')
-            .on('mouseleave', function() {
-                $(`[point-id=${i}]`).attr('r', 2);
-                $(this).css('box-shadow', '');
-            });
-}
-function update(path, best, current, iters, temp, changes, imprvs) {
+function update(path, data) {
     clearPath(path);
     setPath(path);
-    $('#best').html(best);
-    $('#current').html(current);
-    $('#iters').html(iters);
-    $('#temp').html(temp);
-    $('#changes').html(changes);
-    $('#imprvs').html(imprvs);
+    for (let k of Object.keys(data))
+        $(`#${k}`).html(data[k]);
+    $('#error').html(`${((data.best - answer) / answer * 100).toFixed(3)}%`);
     refreshSvg();
 
-    chart.data.labels.push(iters / 100000);
-    chart.data.datasets[0].data.push(best);
-    chart.data.datasets[1].data.push(current);
-    chart.data.datasets[2].data.push(answer);
+    chart.data.labels.push(data.label);
+    chart.data.datasets[0].data.push(answer);
+    chart.data.datasets[1].data.push(data.best);
+    chart.data.datasets[2].data.push(data.current);
     chart.update();
 }
 
@@ -147,9 +132,24 @@ Array.prototype.reverse = function(left, right) {
         [this[i], this[j]] = [this[j], this[i]];
 };
 
+let randInt = (n) => Math.floor(Math.random() * n);
+
 let sqr = (x) => x * x;
-let distance = (i, j) =>
+let calcDistance = (i, j) =>
     Math.sqrt(sqr(points[i].X - points[j].X) + sqr(points[i].Y - points[j].Y));
+let distanceBuffer;
+let distance = (i, j) => distanceBuffer[i][j];
+function calcDistanceBuffer() {
+    let n = points.length;
+    distanceBuffer = new Array(n);
+    for (let i = 0; i < n; ++i) {
+        distanceBuffer[i] = new Array(n);
+        distanceBuffer[i][i] = 0;
+    }
+    for (let i = 0; i < n; ++i)
+        for (let j = i + 1; j < n; ++j)
+            distanceBuffer[i][j] = distanceBuffer[j][i] = calcDistance(i, j);
+}
 function getDistanceSum(path) {
     let n = path.length, s = 0;
     for(let i = 0; i < n; ++i)
@@ -157,81 +157,49 @@ function getDistanceSum(path) {
     return s;
 }
 
-//默认从0-n-1的序列进行便利
-/*    let sum = 0;
-//1.n^2顺序领域交换
-    for (let i = 0; i < n; ++i)
-      for (let j = 0; j < n; ++j)
-      if (j != i){
-          [path[i],path[j]] = [path[j],path[i]]
-          sum = getDistanceSum(path,points);
-          if (sum < sum_ini) {
-            clearPath();
-            setPath(path);
-            sum_ini = sum;
-          }else{
-          [path[j],path[i]] = [path[i],path[j]]
-          }
-      }
-    console.log(sum_ini);
-//2.1000次随机领域搜索
+let init_temp = 200;
+let decay = 0.99;
+function simulatedAnnealing(points, isSA) {
+    $('.ga-info').detach().appendTo('#info > .segment').hide();
+    $('.sa-info').show();
 
-// let num = 0;
-//
-// let i = parseInt(Math.random()*(n),10);
-// let j = parseInt(Math.random()*(n),10);
-// console.log(i);
-// console.log(j);
-// while (num < 1){
-//       let i = parseInt(Math.random()*(n),10);
-//       let j = parseInt(Math.random()*(n),10);
-//       [path[i],path[j]] = [path[j],path[i]]
-//       sum = getDistanceSum(path,points);
-//       console.log(sum)
-//       if (sum < sum_ini) {
-//         clearPath();
-//         setPath(path);
-//         num += 1;
-//         sum_ini = sum;
-//       }
-// }
-// console.log(sum_ini);
-*/
+    chart.data.labels = [];
+    chart.data.datasets[0].data = [];
+    chart.data.datasets[1].data = [];
+    chart.data.datasets[2].data = [];
+    chart.update();
 
-
-
-// 3.模拟退火 随便找两个交换版
-function simulatedAnnealing(points) {
     let n = points.length;
     let path = [];
     for (let i = 0; i < n; ++i)
         path.push(i);
     let sum = getDistanceSum(path);
-    let now = sum, best = sum, bestpath = path.slice(0);
-    let changes = 0, imprvs = 0;
+    let current = sum, best = sum, bestpath = path.slice(0);
+    let changes = 0, imprvs = 0, iters = 0;
     let p = new Promise((resolve) => { resolve(); });
-    for (let T = 200, i = 0; T > 1; T *= 0.95, ++i)
+    for (let T = init_temp, i = 0; T > 1; T *= decay, ++i)
         p = p.then(() => new Promise((resolve) => {
             setTimeout(() => {
-                let iters = i;
                 best = getDistanceSum(bestpath);
-                now = getDistanceSum(path);
-                update(bestpath, best, now, iters * 100000, T, changes, imprvs);
+                current = getDistanceSum(path);
+                let nextIter = 10000;
+                iters += nextIter;
+                update(bestpath, {
+                    best,
+                    current,
+                    iters,
+                    label: iters,
+                    temp: T,
+                    changes,
+                    imprvs
+                });
                 console.time('loop');
-                for (let i = 0; i < 5000; ++i) {
-                    let p = 0, q = 0;
-                    do {
-                        p = Math.floor(Math.random() * n);
-                        q = Math.floor(Math.random() * n);
-                    } while (p == q);
-                    // console.log(now);
-
-                    // [path[p],path[q]] = [path[q],path[p]];
-                    // cur=getDistanceSum(path,points);
-                    // [path[p],path[q]] = [path[q],path[p]];
-
-                    // console.log(cur);
-                    let cur = now;
+                for (let i = 0; i < nextIter; ++i) {
+                    let p = randInt(n);
+                    let q = randInt(n);
+                    if (p === q)
+                        q = (p + 1) % n;
+                    let cur = current;
                     let type;
                     if (Math.random() < 0.5) {
                         type = 1;
@@ -272,25 +240,16 @@ function simulatedAnnealing(points) {
                         }
                     }
 
-                    // console.log("cur "+cur);
-                    // console.log("cur0 "+cur0);
-                    // console.log(cur==cur0);
-                    // let t0=Math.random(),t1=Math.exp((now - cur) / T);
-                    // console.log("random "+t0);
-                    // console.log("exp "+t1);
-                    if (cur < now || Math.random() < Math.exp((now - cur) / T)) {
-                        now = cur;
+                    if (cur < current || (isSA && Math.random() < Math.exp((current - cur) / T))) {
+                        current = cur;
                         if (type === 1)
                             [path[p], path[q]] = [path[q], path[p]];
                         else if (type === 2)
                             path.reverse(p, q);
                         ++changes;
                     }
-                    // console.log(now);
-                    if (now < best) {
-                        // console.log(p);
-                        // console.log(q);
-                        best = now;
+                    if (current < best) {
+                        best = current;
                         bestpath = path.slice(0);
                         ++imprvs;
                     }
@@ -300,152 +259,242 @@ function simulatedAnnealing(points) {
             }, 1);
         }));
     p.then(() => { console.log('Best route: ' + bestpath); });
-    // console.log('best0 '+getDistanceSum(bestpath,points));
-    // console.log(bestpath);
-    // console.log(sum);
 }
 
-function main() {
-    init('svg', 'table', 'canvas');
-    addPoints(points);
-    refreshSvg();
-    simulatedAnnealing(points);
-    bindTableSvg();
+/*
+function roulette(p) {
+    let r = Math.random(), i;
+    for (i = 0; i < p.length && r > 0; ++i)
+        r -= p[i];
+    return Math.min(p.length - 1, i);
 }
-//4.遗传算法
-function inbo(flag,n){
-  flag.spice(0,flag.length);
-  for (let i = 0;i<n;i++)
-    flag.push(0);
+function calcWeight(nowposter) {
+    let weight = nowposter.map(p => 1 / getDistanceSum(p));
+    weight = weight.map(x => Math.pow(x, 5));
+    let sum = weight.reduce((s, w) => s + w, 0);
+    return weight.map(w => w / sum);
 }
-function suitvalue(path){
-  return 1/getDistanceSum(path);
-}
-function calcweight(nowposter,weight){
-  let sum = 0;
-  for (let i = 0;i<nowposter.length;i++){
-    weight[i] = suitvalue(nowposter[i]);
-    sum += weight[i];
-  };
-  for (let i = 0;i<weight.length;i++)
-    weight[i] = weight[i] / sum;
-}
-function jiaocha(dad,mom,jiaocha){
-  let p = 0; let q = 0;
-  do{
-    p = Math.floor(Math.random() * n);
-    q = Math.floor(Math.random() * n);
-  }while (p == q);
-  if (p > q) {let mid = p; p = q; q = mid;}
-  let son1 = [];
-  let son2 = [];
-  for (let i = p;i<q;i++){
-    let mid = dad[i]; dad[i] = mom[i];mom[i] = mid;}
-  let mm  = 0;
-  let flag = [];
-  inbo(flag);
-  while (mm = 0){
-    mm = 1;
-    for (let i = 0;i<dad.length;i++)
-    if (flag[dad[i]] == 0)
-        flag[dad[i]] = 1;
-    else {
-      mm = 0;
-      let re = dad[i]; let rer;
-      for (let j = 0;j<dad.length;j++)
-        if (dad[j] = re) {rer = j;break;}
-      dad[i] = mom[rer];
-    }
-    inbo(flag);
-    for (let i = 0;i<mom.length;i++)
-    if (flag[mom[i]] == 0)
-        flag[mom[i]] = 1;
-    else {
-      mm = 0;
-      let re = mom[i]; let rer;
-      for (let j = 0;j<mom.length;j++)
-        if (mom[j] = re) {rer = j;break;}
-      mom[i] = dad[rer];
-    }
-  }
-  nowposeter.push(mom);
-  nowposter.push(dad);
-}
-function GAag(points){
-  const pc = 0.9;
-  const pm = 0.01;
-  let n = points.length;
-  let path = [];
-  for (let i = 0;i<n;i++)
-    path.push(i);
-  let GAcalc = 0;
-  let son = [];
-  let nowposter = [];
-  nowposter.push(path);
-  path.spice(0,path.length);
-  for (let i = 0;i<n;i++)
-    path.push(n-1-i);
-  nowposter.push(path);
-  son.push(nowposter);
-  nowposter.spice(0,nowposter.length);
-  //son 是存储所有的子代数组
-  let weight = [];
-  whiel (GAcalc < 1000){
-    calcweight(son[GAcalc],weight);
-    let jiaochasize = Math.round(son[GAcalc]*pc);
-    let bianyiszie = Math.round(son[GAcalc]*pm);
-    let bianyinownum = 0;
-    for (bianyinownum;bianyinownum<bianyiszie;bianyinownum++){
-      let p =Math.random();
-      let now = 0; let nowsum = weight[now];
-      while(nowsum<p){
-        now++;
-        nowsum+=weight[now];
-      }
-      let nowpath = son[GAcalc][now];
-      do{
-        p = Math.floor(Math.random() * n);
-        q = Math.floor(Math.random() * n);
-      }while (p == q);
-      [p,q] = [q,p]
-      nowposter.push(nowpath);
-    }
-    for (let i = 0; i< jiaochasize;i++){
-      let p =Math.random();
-      let now = 0; let nowsum = weight[now];
-      while(nowsum<p){
-        now++;
-        nowsum+=weight[now];
-      }
-      let Dad = now;
-      let p =Math.random();
-      let now = 0; let nowsum = weight[now];
-      while(nowsum<p){
-        now++;
-        nowsum+=weight[now];
-      }
-      let Mom = now;
-      jiaocha(son[GAcalc][Dad],son[GAcalc][Mom],nowposter);
-    }
-    GAcalc++;
-    son[GAcalc].push(nowposter);
-    nowposter.spice(0,nowposter.length);
-  }
-  let minn = getDistanceSum(son[GAcalc-1][0]);
-  let ppid = 0;
-  for (let i = 1;i<son[GAcalc-1].length;i++){
-    let mmid = getDistanceSum(son[GAcalc-1][i]);
-    if (mmid < minn) {minn = mid; ppid = i;}
-  }
-  path = son[GAcalc-1][ppid];
-  console.log('Best route: ' + minn);
-  //怎么用 update?
-}
+function crossover(n, dad, mom) {
+    let p, q;
+    do {
+        p = randInt(n);
+        q = randInt(n);
+    } while (p === q);
+    if (p > q)
+        [p, q] = [q, p];
+    let a = $.extend(true, [], dad);
+    let b = $.extend(true, [], mom);
+    for (let i = p; i < q; i++)
+        [a[i], b[i]] = [b[i], a[i]];
+    let f, flag;
+    do {
+        f = false;
+        flag = Array(n).fill(-1);
+        for (let i = 0; i < a.length; i++)
+            if (flag[a[i]] === -1)
+                flag[a[i]] = i;
+            else {
+                f = true;
+                a[i] = b[flag[a[i]]];
+            }
 
-$(() => {
-    const code = 'pr144.tsp';
-    $.get(`http://172.18.187.134/data/${code}`, (v) => {
-        points = JSON.parse(v);
-        main();
+        flag = Array(n).fill(-1);
+        for (let i = 0; i < b.length; i++)
+            if (flag[b[i]] === -1)
+                flag[b[i]] = i;
+            else {
+                f = true;
+                b[i] = a[flag[b[i]]];
+            }
+    } while (f);
+    return [a, b];
+}
+*/
+/*
+function encode(arr) {
+    let n = arr.length;
+    let ref = Array(n).fill(0).map((_, i) => i);
+    let res = [];
+    arr.forEach((v) => {
+        let p = ref.findIndex(r => r === v);
+        ref.splice(p, 1);
+        res.push(p);
     });
+    return res;
+}
+function decode(arr) {
+    let n = arr.length;
+    let ref = Array(n).fill(0).map((_, i) => i);
+    let res = [];
+    arr.forEach((v) => {
+        res.push(ref[v]);
+        ref.splice(v, 1);
+    });
+    return res;
+}
+function crossover(dad, mom) {
+    let n = dad.length;
+    let a = encode(dad), b = encode(mom);
+    let p = randInt(n), q = randInt(n);
+    if (p === q)
+        q = (p + 1) % n;
+    for (let i = p; i <= q; ++i)
+        [a[i], b[i]] = [b[i], a[i]];
+    return [decode(a), decode(b)];
+}
+*/
+function crossoverOnce(dad, mom, direction) {
+    let n = dad.length;
+    let a = $.extend(true, [], dad);
+    let b = $.extend(true, [], mom);
+    let res = [];
+    let c = a[randInt(n)];
+    res.push(c);
+    while (res.length < n) {
+        let ia = a.findIndex(v => v === c);
+        let ib = b.findIndex(v => v === c);
+        a.splice(ia, 1);
+        b.splice(ib, 1);
+        ia = a[(ia + direction + a.length) % a.length];
+        ib = b[(ib + direction + b.length) % b.length];
+        c = distance(c, ia) < distance(c, ib) ? ia : ib;
+        res.push(c);
+    }
+    return res;
+}
+function crossover(dad, mom) {
+    return [crossoverOnce(dad, mom, 1), crossoverOnce(mom, dad, -1)];
+}
+
+function geneticAlgorithm(points) {
+    $('.sa-info').detach().appendTo('#info > .segment').hide();
+    $('.ga-info').show();
+
+    chart.data.labels = [];
+    chart.data.datasets[0].data = [];
+    chart.data.datasets[1].data = [];
+    chart.data.datasets[2].data = [];
+    chart.update();
+
+    const size = 50;
+    const bestN = 4;
+    let n = points.length;
+    let all = [[
+        Array(n).fill(0).map((_, i) => i),
+        Array(n).fill(0).map((_, i) => n - 1 - i),
+    ]];
+    for (let k = all.length + 1; k < size; ++k) {
+        let t = Array(n).fill(0).map((_, i) => i);
+        t.shuffle();
+        all[0].push(t);
+    }
+    let globalMinLength = 1e10, globalMin;
+    let current = all[0];
+    let p = new Promise((resolve) => {
+        console.time('GA');
+        resolve();
+    });
+    let historyBest = [];
+    let end = false;
+    for (let generation = 0; generation < 1000; ++generation)
+        p = p.then(() => new Promise((resolve) => {
+            setTimeout(() => {
+                if (end) {
+                    resolve();
+                    return;
+                }
+                console.time(`Generation ${generation}`);
+                current.sort((a, b) => getDistanceSum(a) - getDistanceSum(b));
+                current = current.slice(0, bestN);
+                let son = [];
+
+                for (let p = 0; p < current.length; ++p)
+                    for (let q = p + 1; q < current.length; ++q)
+                        son = son.concat(crossover(current[p], current[q]));
+
+                while (son.length < size) {
+                    let r = [];
+                    let bestLength = 1e100;
+                    for (let i = 0; i < 100; ++i) {
+                        let type = randInt(2);
+                        let p = randInt(n);
+                        let q = randInt(n);
+                        if (p === q)
+                            q = (p + 1) % n;
+                        let t = $.extend(true, [], current[randInt(bestN)]);
+                        if (type === 0) {
+                            // Swap
+                            [t[p], t[q]] = [t[q], t[p]];
+                        } else if (type === 1) {
+                            // Reverse
+                            for (let l = p, r = q; l <= r; l++, r--)
+                                [t[l], t[r]] = [t[r], t[l]];
+                        }
+                        let len = getDistanceSum(t);
+                        if (len < bestLength) {
+                            bestLength = len;
+                            r = t;
+                        }
+                    }
+                    son.push(r);
+                }
+
+                console.timeEnd(`Generation ${generation}`);
+                let pathLength = current.map(getDistanceSum);
+                let minLength = Math.min(...pathLength);
+                let min = pathLength.findIndex(l => l === minLength);
+                if (minLength < globalMinLength) {
+                    globalMinLength = minLength;
+                    globalMin = $.extend(true, [], current[min]);
+                }
+                update(current[min], {
+                    best: globalMinLength,
+                    current: minLength,
+                    label: generation,
+                    gen: generation
+                });
+
+                if (generation > 50) {
+                    if (historyBest[generation - 50] - globalMinLength < answer / 200)
+                        end = true;
+                }
+                historyBest.push(globalMinLength);
+                all.push(son);
+                current = son;
+                resolve();
+            }, 0);
+        }));
+    p.then(() => new Promise(() => {
+        console.timeEnd('GA');
+        console.log(`Best path: ${globalMin}`);
+    }));
+}
+
+let code = 'ch130';
+$(() => {
+    init('svg', 'table', 'canvas');
+    $('#sa').on('click', () => { simulatedAnnealing(points, true); });
+    $('#hill-climb').on('click', () => { simulatedAnnealing(points, false); });
+    $('#ga').on('click', () => { geneticAlgorithm(points); });
+    $('#init-temp').on('change', function() {
+        init_temp = $(this).val();
+    });
+    $('#decay').on('change', function() {
+        decay = $(this).val();
+    });
+    $('#code-dropdown').dropdown({
+        onChange: (value) => {
+            code = `${value}.tsp`;
+            $.get(`http:/sgly.tk/tsp/${code}`, (v) => {
+                let data = JSON.parse(v);
+                answer = data.answer;
+                points = data.points;
+                addPoints(data.points);
+                calcDistanceBuffer();
+                refreshSvg();
+            });
+        }
+    });
+    $('#code-dropdown').dropdown('set value', code);
 });
+
