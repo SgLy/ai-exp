@@ -24,8 +24,10 @@ class Net:
         else:
             # random initialize
             for i in range(1, len(self.layer_sizes)):
-                self.weights.append(np.random.rand(self.layer_sizes[i - 1], 
-                    self.layer_sizes[i]) * 2 - 1)
+                nrow = self.layer_sizes[i - 1]
+                ncol = self.layer_sizes[i]
+                self.weights.append(np.random.randn(nrow, ncol).astype(np.float32) \
+                        * np.sqrt(2.0 / nrow))
 
     def train_batch(self, batch_input, batch_label):
         self._forward(batch_input)
@@ -41,6 +43,7 @@ class Net:
 
     def eval(self, _input):
         self._forward(_input)
+        self.logits = activation(self.outputs[-1])
         return [np.argmax(i) for i in self.logits]
 
     def save(self, outfile):
@@ -64,7 +67,7 @@ class Net:
             nrow = self.layer_sizes[w]
             ncol = self.layer_sizes[w + 1]
             M = self.outputs[w]
-            M_1 = self.outputs[w + 1]
+            M_1 = g_active(self.outputs[w + 1])
             W = self.weights[w]
 
             # gradients for weights
@@ -73,18 +76,18 @@ class Net:
                 for j in range(ncol):
                     for k in range(self.batch_size):
                         grad[i][j] += self.gradients[-1][k][j] * \
-                                g_active(M_1[k][j]) * M[k][i]
+                                M_1[k][j] * M[k][i]
 
             # apply gradient to weights
-            self.weights[w] -= self.lr * grad
+            self.weights[w] -= (self.lr * grad)
             
             # gradients for outputs
             grad = np.zeros([self.batch_size, nrow])
             for i in range(self.batch_size):
                 for j in range(nrow):
                     for k in range(ncol):
-                        grad[i][j] += self.lr * self.gradients[-1][i][k] * \
-                                g_active(M_1[i][k]) * W[j][k]
+                        grad[i][j] += self.gradients[-1][i][k] * \
+                                M_1[i][k] * W[j][k]
 
             self.gradients.append(grad)
         # self.gradients = self.gradients.reverse()

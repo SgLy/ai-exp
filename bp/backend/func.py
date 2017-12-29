@@ -22,20 +22,26 @@ def train(net, images, labels, num_iters, save_file = False):
             input_label = labels[index: end]
         else:
             end = end % image_len
-            input_img = images[index: ]
-            input_img.extend(images[: end])
-            input_label = labels[index: ]
-            input_img.extend(images[: end])
-        index = end
+            input_img = np.concatenate((images[index:], images[: end]))
+            input_label = np.concatenate((labels[index: ], labels[: end]))
+        index = end % image_len
 
         loss = net.train_batch(input_img, input_label)
 
         if i % 10 == 0:
             _labels = [np.argmax(i) for i in net.logits]
             acc = _acc(_labels, input_label)
-            print("Iteration {}: loss: {} acc:{}".format(i, loss, acc))
+            print("Iteration {}: loss: {} acc:{} lr:{}".format(i, loss, acc, net.lr))
+            '''
+            print("label: {}".format(input_label[0]))
+            print(net.logits[0])
+            #print(net.weights[1])
+            '''
 
-        if save_file and i % 500 == 0:
+        if (i + 1) % 500 == 0:
+            net.lr = net.lr * 0.1
+
+        if save_file and i % 200 == 0:
             net.save(save_file)
             print("Model saved.")
 

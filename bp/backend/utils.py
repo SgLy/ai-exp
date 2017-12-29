@@ -40,15 +40,11 @@ def vecMulMat(v, m):
             for i in range(m_r)]
 
 def sigmoid(x):
-    if x < -20:
-        return 0
-    return 1.0 / (1 + math.exp(-x))
+    return 1.0 / (1 + np.exp(-x))
 
 # gradient of sigmoid
 def g_sigmoid(x):
-    if x < -20 or x > 20:
-        return 0
-    return math.exp(-x) / ((1 + math.exp(-x)) ** 2)
+    return np.exp(-x) / ((1 + np.exp(-x)) ** 2)
 
 def relu(x):
     if x <= 0:
@@ -62,7 +58,6 @@ def g_relu(x):
     else:
         return 1
 
-def activation(v):
-    return [[sigmoid(j) for j in i] for i in v]
 
+activation = sigmoid
 g_active = g_sigmoid
