@@ -83,11 +83,49 @@ $(document).ready(function() {
   {
     let ctx = document.getElementById("loss_chart").getContext('2d');
     loss_chart = new Chart(ctx, {
-      type: 'line'});
+      type: 'line',
+      options: {
+        scales: {
+          xAxes: [{
+              display: true,
+              scaleLabel: {
+                  display: true,
+                  labelString: 'Iteration'
+              }
+          }],
+          yAxes: [{
+              display: true,
+              scaleLabel: {
+                  display: true,
+                  labelString: 'Loss'
+              }
+          }]
+        }
+      }
+    });
 
     ctx = document.getElementById("acc_chart").getContext('2d');
     acc_chart = new Chart(ctx, {
-      type: 'line'});
+      type: 'line',
+      options: {
+        scales: {
+          xAxes: [{
+              display: true,
+              scaleLabel: {
+                  display: true,
+                  labelString: 'Iteration'
+              }
+          }],
+          yAxes: [{
+              display: true,
+              scaleLabel: {
+                  display: true,
+                  labelString: 'Accuracy'
+              }
+          }]
+        }
+      }
+    });
 
     initData();
   }
