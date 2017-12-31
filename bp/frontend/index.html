@@ -3,8 +3,10 @@
 
 <head>
   <meta charset="UTF-8">
+  <title>BP Algorithm</title>
 
   <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+  <link type="text/css" rel="stylesheet" href="css/net_graph.css">
   <link type="text/css" rel="stylesheet" href="css/drawingboard.css"/>
   <!--Let browser know website is optimized for mobile-->
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -12,6 +14,7 @@
 
 <body>
   <script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
+  <script type="text/javascript" src="js/jquery.mousewheel.min.js"></script>
   <script type="text/javascript" src="js/materialize.min.js"></script>
   <script type="text/javascript" src="js/drawingboard.min.js"></script>
   <script type="text/javascript" src="js/test.js"></script>
@@ -27,7 +30,7 @@
 
   <div class="row">
     <div class="col s12 m6 l4">
-      <div class="card" style="margin-top: 20px">
+      <div id="draw_card" class="card hoverable" style="margin-top: 20px">
         <div class="card-content">
           <h5>Select an exsiting model</h5>
           <div class="input-field">
@@ -61,6 +64,19 @@
           <a href="#" id="clear_board">Clear</a>
         </div>
 
+      </div>
+    </div>
+
+    <div class="col s12 m6 l8">
+      <div class="card hoverable" style="margin-top: 20px">
+        <div class="card-content">
+          <h5>Neural Network Node Information</h5>
+          <div class="hint">Inputs of nodes of the network are shown below. Due to the performance limitation of browsers, 30 nodes at maximum of each layer are shown.</div>
+          <div class="hint">Draw to move. Hold alt and scroll mousewheel to scale.</div>
+          <div class="container" style="width: 100%" id="svg_con">
+            <svg version="1.1" height=500 xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+        </div>
       </div>
     </div>
 
