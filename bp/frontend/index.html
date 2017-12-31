@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+
+  <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+  <link type="text/css" rel="stylesheet" href="css/drawingboard.css"/>
+  <!--Let browser know website is optimized for mobile-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+
+<body>
+  <script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
+  <script type="text/javascript" src="js/materialize.min.js"></script>
+  <script type="text/javascript" src="js/drawingboard.min.js"></script>
+  <script type="text/javascript" src="js/test.js"></script>
+
+  <nav>
+    <div class="nav-wrapper light-blue darken-1">
+      <ul id="nav-mobile" class="left" style="margin-left: 3%">
+        <li class="active"><a href="index.html">Test</a></li>
+        <li><a href="train.html">Train</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="row">
+    <div class="col s12 m6 l4">
+      <div class="card" style="margin-top: 20px">
+        <div class="card-content">
+          <h5>Select an exsiting model</h5>
+          <div class="input-field">
+            <select id="model_select"></select>
+            <label>Model Select</label>
+          </div>
+
+          <div id="drawing" style="width: 80%"></div>
+
+          <div id="prediction" style="display: none">
+            <h6>The prediction is:</h5>
+
+            <div id="preloader_1" class="preloader-wrapper active">
+              <div class="spinner-layer spinner-blue-only">
+                <div class="circle-clipper left">
+                  <div class="circle"></div>
+                </div><div class="gap-patch">
+                  <div class="circle"></div>
+                </div><div class="circle-clipper right">
+                  <div class="circle"></div>
+                </div>
+              </div>
+            </div>
+
+            <p></p>
+          </div>
+        </div>
+
+        <div class="card-action">
+          <a href="#" id="submit_draw">Submit</a>
+          <a href="#" id="clear_board">Clear</a>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="col s8">
+    </div>
+
+  </div>
+</body>

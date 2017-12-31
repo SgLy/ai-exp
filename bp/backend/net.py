@@ -9,7 +9,7 @@ import traceback
 np.seterr(all='raise')
 
 class Net:
-    def __init__(self, input_size, num_classes, hidden_sizes,
+    def __init__(self, input_size = 784, num_classes = 10, hidden_sizes = [30],
             batch_size = 50, lr = 0.1, model = False):
         self.input_size = input_size
         self.num_classes = num_classes
@@ -21,6 +21,9 @@ class Net:
         if model:
             # read existing model
             self.weights = np.load(model)
+            # adjust layer structure to model opened
+            self.layer_sizes = [w.shape[0] for w in self.weights]
+            self.layer_sizes.append(self.weights[-1].shape[1])
         else:
             # random initialize
             for i in range(1, len(self.layer_sizes)):
@@ -30,6 +33,7 @@ class Net:
                         * np.sqrt(2.0 / nrow))
 
     def train_batch(self, batch_input, batch_label):
+        batch_input = prep(batch_input)
         self._forward(batch_input)
         self.logits = activation(self.outputs[-1])
         
@@ -42,6 +46,7 @@ class Net:
         return self.loss
 
     def eval(self, _input):
+        _input = prep(_input)
         self._forward(_input)
         self.logits = activation(self.outputs[-1])
         return [np.argmax(i) for i in self.logits]
@@ -53,11 +58,11 @@ class Net:
         self.outputs = []
         # output include input layer
         # output is the layer value not activated
-        self.outputs.append(batch_input)
+        self.outputs.append(np.array(batch_input))
         # first layer does not activate
-        self.outputs.append(mul(batch_input, self.weights[0]))
+        self.outputs.append(np.matmul(batch_input, self.weights[0]))
         for i in range(1, len(self.weights)):
-            hidden = mul(activation(self.outputs[-1]), self.weights[i])
+            hidden = np.matmul(activation(self.outputs[-1]), self.weights[i])
             self.outputs.append(hidden)
         
     def _backpropagation(self):
@@ -70,6 +75,9 @@ class Net:
             M_1 = g_active(self.outputs[w + 1])
             W = self.weights[w]
 
+            T = np.multiply(self.gradients[-1], M_1)
+            grad = np.matmul(M.T, T)
+            '''
             # gradients for weights
             grad = np.zeros([nrow, ncol])
             for i in range(nrow):
@@ -77,10 +85,14 @@ class Net:
                     for k in range(self.batch_size):
                         grad[i][j] += self.gradients[-1][k][j] * \
                                 M_1[k][j] * M[k][i]
+            '''
 
             # apply gradient to weights
             self.weights[w] -= (self.lr * grad)
             
+            T = np.multiply(self.gradients[-1], M_1)
+            grad = np.matmul(T, W.T)
+            '''
             # gradients for outputs
             grad = np.zeros([self.batch_size, nrow])
             for i in range(self.batch_size):
@@ -88,6 +100,7 @@ class Net:
                     for k in range(ncol):
                         grad[i][j] += self.gradients[-1][i][k] * \
                                 M_1[i][k] * W[j][k]
+            '''
 
             self.gradients.append(grad)
         # self.gradients = self.gradients.reverse()
