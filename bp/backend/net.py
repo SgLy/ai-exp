@@ -77,31 +77,12 @@ class Net:
 
             T = np.multiply(self.gradients[-1], M_1)
             grad = np.matmul(M.T, T)
-            '''
-            # gradients for weights
-            grad = np.zeros([nrow, ncol])
-            for i in range(nrow):
-                for j in range(ncol):
-                    for k in range(self.batch_size):
-                        grad[i][j] += self.gradients[-1][k][j] * \
-                                M_1[k][j] * M[k][i]
-            '''
 
             # apply gradient to weights
             self.weights[w] -= (self.lr * grad)
             
             T = np.multiply(self.gradients[-1], M_1)
             grad = np.matmul(T, W.T)
-            '''
-            # gradients for outputs
-            grad = np.zeros([self.batch_size, nrow])
-            for i in range(self.batch_size):
-                for j in range(nrow):
-                    for k in range(ncol):
-                        grad[i][j] += self.gradients[-1][i][k] * \
-                                M_1[i][k] * W[j][k]
-            '''
-
             self.gradients.append(grad)
         # self.gradients = self.gradients.reverse()
 

@@ -4,13 +4,11 @@ node_modules
 # tsp data
 tsp/data
 
+# bp data
+bp/backend/mnist
+
 # vscode
 .vscode
-
-# bp dataset
-bp/backend/mnist/
-# bp saved model
-bp/backend/saved/
 
 
 # python

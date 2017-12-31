@@ -67,6 +67,7 @@ $(document).ready(function() {
       success: function(res) {
         $("#preloader_1").hide();
         $("#prediction p").text(res.ans);
+        option.horizontalPadding = $(".col.s12.m6.l8 .card-content").width() * 0.5 / res.layers.length;
         // layers to drawing data
         let d_data = {nodes: []};
         for (let i in res.layers) {

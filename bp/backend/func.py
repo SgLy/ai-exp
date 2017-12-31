@@ -12,12 +12,22 @@ def _acc(_labels, labels):
     return (count + 0.0) / len(labels)
 
 
-def train(net, images, labels, num_iters, save_file = False, saving_gap = 2000):
+def train(net, images, labels, num_iters, save_file = False, saving_gap = 2000, 
+        trainingData = False, lock = None, training_flag = False):
     image_len = len(images)
     index = 0 # index of images
     batch_size = net.batch_size
+    print("Net layers:")
+    print(net.layer_sizes)
     print("Start training!")
     for i in range(num_iters):
+        if training_flag:
+            lock.acquire()
+            if not training_flag['value']:
+                lock.release()
+                break
+            lock.release()
+
         end = index + batch_size
         if end <= image_len:
             input_img = images[index: end]
@@ -30,15 +40,17 @@ def train(net, images, labels, num_iters, save_file = False, saving_gap = 2000):
 
         loss = net.train_batch(input_img, input_label)
 
-        if i % 100 == 0:
+        if i % 500 == 0:
             _labels = [np.argmax(i) for i in net.logits]
             acc = _acc(_labels, input_label)
             print("Iteration {}: loss: {} acc:{} lr:{}".format(i, loss, acc, net.lr))
-            '''
-            print("label: {}".format(input_label[0]))
-            print(net.logits[0])
-            #print(net.weights[1])
-            '''
+            if trainingData:
+                if lock:
+                    lock.acquire()
+                trainingData['loss'].append(loss)
+                trainingData['acc'].append(acc)
+                if lock:
+                    lock.release()
 
         if i % 2000 == 1999:
             net.lr = net.lr * 0.1
@@ -55,6 +67,7 @@ def eval(net, images, labels):
     print("Evaluating...")
     acc = _acc(_labels, labels)
     print("Accuracy: {}".format(acc))
+    return acc
 
 def trim(im):
     bg = Image.new(im.mode, im.size, 255)
