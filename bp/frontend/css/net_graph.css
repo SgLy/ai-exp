@@ -2,8 +2,8 @@ svg {
   padding: 3%;
 }
 path {
-  fillopacicy: 0;
-  stroke: dodgerblue;
+  fillopacity: 0;
+  stroke: rgba(30, 144, 255, 0.1);
 }
 circle {
   fill: darkblue;
