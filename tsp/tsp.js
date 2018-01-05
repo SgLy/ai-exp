@@ -218,7 +218,6 @@ function simulatedAnnealing(points, isSA) {
                             cur -= distance(path[p], path[(p + 1) % n]);
                             cur += distance(path[(p + n - 1) % n], path[q]);
                             cur += distance(path[q], path[(p + 1) % n]);
-
                             cur -= distance(path[(q + n - 1) % n], path[q]);
                             cur -= distance(path[q], path[(q + 1) % n]);
                             cur += distance(path[(q + n - 1) % n], path[p]);

@@ -72,7 +72,7 @@ $(() => {
                             label: layer[j].toPrecision(2),
                             layer: parseInt(i) + 1
                         });
-                        // if (j >= 60) break;
+                        if (j >= 60) break;
                     }
                 }
                 init(d_data);
@@ -93,6 +93,7 @@ $(() => {
 
 
 // nodes graph related
+
 let option = {
     svg: 'svg',
     ratio: 2,
@@ -179,3 +180,4 @@ function init(data) {
         $(option.svg).css('cursor', 'default');
     });
 }
+
