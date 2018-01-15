@@ -25,7 +25,7 @@ class Queue {
 }
 
 const finalArr = [1, 2, 3, 8, 0, 4, 7, 6, 5];
-let set = new Set(); // no class static variable workaround
+let set = {}; // no class static variable workaround
 class Node {
     constructor(arr, parent, depth) {
         this.arr = $.extend(true, [], arr);
@@ -88,10 +88,10 @@ class Node {
         this.string = this.arr.reduce((s, v) => s + v, '');
     }
     get visited() {
-        return Node.set.has(this.string);
+        return Node.set[this.string] !== undefined;
     }
     visit() {
-        Node.set.add(this.string);
+        Node.set[this.string] = this.id;
     }
 
     get html() {
@@ -124,19 +124,21 @@ class Node {
             html: `
                 <b>Evaluation value:</b><code>${this.eval}</code></br>
                 ${this.isAnswer === true ? '<b>This node is in the path to the answer.</b></br>': ''}
-                ${this.expanded === false ? '<b>This node is in Open Table.</br>': ''}
+                ${this.expanded === false ? '<b>This node is in Open Set.</br>': ''}
                 ${this.toExpand === true ? '</br><b>This node will be visited next.</b>': ''}
             `,
-            variation: 'flowing'
+            variation: 'flowing',
+            position: 'left center'
         });
         return res;
     }
 }
 
 const root = new Node(Array(9).fill(0), undefined, -1);
-let start = new Node([5, 6, 3, 1, 0, 8, 7, 2, 4], root, 0);
+// let start = new Node([5, 6, 3, 1, 0, 8, 7, 2, 4], root, 0);
+// let start = new Node([8, 1, 3, 7, 2, 4, 6, 0, 5], root, 0);
+let start = new Node([7, 0, 2, 3, 8, 4, 1, 6, 5], root, 0);
 const final = new Node(finalArr);
-//let start = new Node([8, 1, 3, 7, 2, 4, 6, 0, 5], root, 0);
 let ans;
 let ansLength;
 let allNodes = [];
@@ -149,19 +151,30 @@ function next(q) {
     cur.toExpand = false;
     cur.expanded = true;
     cur.searchId = searchCnt++;
-    cur.visit();
     if (cur.string === final.string)
         return cur;
     [cur.up, cur.down, cur.left, cur.right].forEach((v) => {
-        if (v === undefined || v.visited === true)
+        if (v === undefined)
             return;
-        q.queue(v);
-        v.id = allNodes.length;
-        allNodes.push(v);
+        if (v.visited === true) {
+            let that = allNodes[Node.set[v.string]];
+            if (v.eval < that.eval) {
+                that.eval = v.eval;
+                that.parent = cur;   
+                that.depth = cur.depth + 1;
+                if (that.expanded) {
+                    that.expanded = false;
+                    q.queue(that);
+                }
+            }
+        } else {
+            v.id = allNodes.length;
+            allNodes.push(v);
+            q.queue(v);
+            v.visit();
+        }
     });
 
-    while (q.length > 0 && q.peek().visited === true)
-        q.dequeue();
     if (q.length > 0)
         q.peek().toExpand = true;
 }
@@ -191,15 +204,27 @@ function endSearch(q) {
         }
     }
     $('#ans').text(ansLength);
-    while (q.length !== 0) {
-        let current = q.dequeue();
-        current.id = allNodes.length;
-        allNodes.push(current);
+}
+
+let leftOffset;
+function traverse(node) {
+    if (node.child.length === 0) {
+        node.X = node.L = node.R = leftOffset;
+        leftOffset += 100;
+    } else {
+        node.L = 1e10;
+        node.R = -1;
+        node.child.forEach((n) => {
+            traverse(n);
+            node.L = Math.min(n.L, node.L);
+            node.R = Math.max(n.R, node.R);
+        });
+        node.X = (node.L + node.R) / 2;
     }
 }
 
 let container;
-let renderCount = 100;
+let renderCount = 50;
 function render() {
     if (container !== undefined)
         container.remove();
@@ -210,44 +235,17 @@ function render() {
         + (a.id - b.id)
     );
     let nodes = allNodes.filter((v, i) => i < renderCount || v.isAnswer === true);
-    let maxDepth, depthCnt;
-    maxDepth = nodes.reduce((m, n) => Math.max(m, n.depth), 0) + 1;
-    depthCnt = Array(maxDepth).fill(0);
-    nodes.forEach((n) => n.levelId = depthCnt[n.depth]++);
     allNodes.forEach((n) => {
-        n.L = 1e12;
-        n.R = 0;
-        n.width = 0;
         n.child = [];
+        n.x = 0;
     });
     nodes.forEach((n) => {
         if (n.parent === undefined)
             return;
         n.parent.child.push(n);
     });
-    for (let left = nodes.length - 1, right = left + 1; left >= 0; --left) {
-        if (left === 0 || nodes[left].depth !== nodes[left - 1].depth) {
-            for (let i = left; i < right; ++i) {
-                let n = nodes[i];
-                if (n.child.length === 0)
-                    n.width = 1;
-                else
-                    n.width = n.child.reduce((w, c) => w + c.width, 0);
-                n.L = (i !== left && nodes[i - 1].parent === n.parent) ? nodes[i - 1].R : 0;
-                n.R = n.L + n.width * 100;
-                n.X = (n.R - n.L) / 2 + n.L;
-                n.Y = n.depth * 120;
-            }
-            right = left;
-        }
-    }
-    nodes.forEach((n) => {
-        let p = n.parent;
-        while (p != root) {
-            n.X += p.L;
-            p = p.parent;
-        }
-    });
+    leftOffset = 0;
+    traverse(start);
     nodes.forEach((n) => {
         let d = n.html;
         d.appendTo(container);
@@ -255,14 +253,20 @@ function render() {
         d.css({
             position: 'absolute',
             left: n.X,
-            top: n.Y
+            top: n.depth * 120
         });
     });
+    let bodyX = start.R - start.L + 100;
+    let bodyY = Math.max(...nodes.map(n => n.depth * 120)) + 120;
     container.css({
-        width: nodes[0].width * 100 + 200,
-        height: maxDepth * 120 + 100
+        width: bodyX,
+        height: bodyY
     });
     container.prependTo('body');
+    $('body').css({
+        width: `calc(24em + ${bodyX}px)`,
+        height: `calc(6em + ${bodyY}px)`
+    });
     let jsPlumbIns = jsPlumb.getInstance();
     jsPlumbIns.ready(() => {
         jsPlumbIns.setContainer(container);
@@ -297,7 +301,7 @@ function generateRandomArray() {
 }
 
 function reset() {
-    set = new Set();
+    set = {};
     start.expanded = false;
     start.toExpand = true;
     start.isAnswer = undefined;

@@ -206,7 +206,7 @@ class Chess {
                 }
             },
             bishop: {
-                name: ['相', '象'],
+                name: ['象', '相'],
                 value: () => 7,
                 moves: function() {
                     const pos = this.position;
@@ -439,6 +439,7 @@ function alphabeta(board, depth, alpha, beta) {
         return { search: board.value, move: undefined };
     let v = board.side === 'SIDE_RED' ? negInf : posInf;
     let move = undefined;
+
     for (let i = 0; i < board.map.length; ++i)
         for (let j = 0; j < board.map[i].length; ++j) {
             let chess = board.map[i][j];
@@ -473,6 +474,7 @@ function alphabeta(board, depth, alpha, beta) {
 }
 
 let rotate = true;
+const MAX_DEPTH = 4;
 function move(oldPos, newPos) {
     history.push(board.clone);
     board.move(oldPos, newPos);
@@ -506,13 +508,13 @@ function reset(_board) {
         board = _board;
     board.element.appendTo($('.container'));
     if (firstHand)
-        aiMove(4);
+        aiMove(MAX_DEPTH);
     let dimmerLoader = $('<div class="ui text loader"></div>');
     $('#board').dimmer('add content', dimmerLoader);
     $('#board').on('click', '.movable.cell, .attackable.cell', function() {
         move(selectedChess.position, $(this).data('position'));
         rotateBoard();
-        aiMove(4);
+        aiMove(MAX_DEPTH);
     });
 
     $('#board').on('click', '.chess', function () {

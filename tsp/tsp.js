@@ -176,7 +176,10 @@ function simulatedAnnealing(points, isSA) {
     let sum = getDistanceSum(path);
     let current = sum, best = sum, bestpath = path.slice(0);
     let changes = 0, imprvs = 0, iters = 0;
-    let p = new Promise((resolve) => { resolve(); });
+    let p = new Promise((resolve) => {
+        console.time('SA');
+        resolve();
+    });
     for (let T = init_temp, i = 0; T > 1; T *= decay, ++i)
         p = p.then(() => new Promise((resolve) => {
             setTimeout(() => {
@@ -193,7 +196,6 @@ function simulatedAnnealing(points, isSA) {
                     changes,
                     imprvs
                 });
-                console.time('loop');
                 for (let i = 0; i < nextIter; ++i) {
                     let p = randInt(n);
                     let q = randInt(n);
@@ -238,8 +240,10 @@ function simulatedAnnealing(points, isSA) {
                             cur += distance(path[p], path[r]);
                         }
                     }
-
-                    if (cur < current || (isSA && Math.random() < Math.exp((current - cur) / T))) {
+//                     let func = (delta, T) => (T / 100) * Math.exp(-1250 * delta);
+                    let func = (delta, T) => Math.exp(-delta / T);
+                    let delta = (cur - current);
+                    if (delta < 0 || (isSA && Math.random() < func(delta, T))) {
                         current = cur;
                         if (type === 1)
                             [path[p], path[q]] = [path[q], path[p]];
@@ -253,11 +257,14 @@ function simulatedAnnealing(points, isSA) {
                         ++imprvs;
                     }
                 }
-                console.timeEnd('loop');
                 resolve();
             }, 1);
         }));
-    p.then(() => { console.log('Best route: ' + bestpath); });
+    p.then(() => {
+        console.timeEnd('SA');
+        console.log('Best length: ' + best);
+    });
+    return p;
 }
 
 /*
@@ -375,8 +382,7 @@ function geneticAlgorithm(points) {
     chart.data.datasets[2].data = [];
     chart.update();
 
-    const size = 50;
-    const bestN = 4;
+    const size = 100;
     let n = points.length;
     let all = [[
         Array(n).fill(0).map((_, i) => i),
@@ -402,9 +408,8 @@ function geneticAlgorithm(points) {
                     resolve();
                     return;
                 }
-                console.time(`Generation ${generation}`);
                 current.sort((a, b) => getDistanceSum(a) - getDistanceSum(b));
-                current = current.slice(0, bestN);
+                current = current.slice(0, Math.max(4, 10 - generation / 50));
                 let son = [];
 
                 for (let p = 0; p < current.length; ++p)
@@ -412,33 +417,24 @@ function geneticAlgorithm(points) {
                         son = son.concat(crossover(current[p], current[q]));
 
                 while (son.length < size) {
-                    let r = [];
-                    let bestLength = 1e100;
-                    for (let i = 0; i < 100; ++i) {
-                        let type = randInt(2);
-                        let p = randInt(n);
-                        let q = randInt(n);
-                        if (p === q)
-                            q = (p + 1) % n;
-                        let t = $.extend(true, [], current[randInt(bestN)]);
-                        if (type === 0) {
-                            // Swap
-                            [t[p], t[q]] = [t[q], t[p]];
-                        } else if (type === 1) {
-                            // Reverse
-                            for (let l = p, r = q; l <= r; l++, r--)
-                                [t[l], t[r]] = [t[r], t[l]];
-                        }
-                        let len = getDistanceSum(t);
-                        if (len < bestLength) {
-                            bestLength = len;
-                            r = t;
-                        }
+                    let path = $.extend(true, [], current[randInt(current.length)]);
+                    let p = randInt(n);
+                    let q = randInt(n);
+                    if (p === q)
+                        q = (p + 1) % n;
+
+                    if (Math.random() < 0.5) {
+                        // Case 1: swap
+                        [path[p], path[q]] = [path[q], path[p]];
+                    } else {
+                        // Case 2: reverse
+                        if (p > q)
+                            [p, q] = [q, p];
+                        path.reverse(p, q);
                     }
-                    son.push(r);
+                    son.push(path);
                 }
 
-                console.timeEnd(`Generation ${generation}`);
                 let pathLength = current.map(getDistanceSum);
                 let minLength = Math.min(...pathLength);
                 let min = pathLength.findIndex(l => l === minLength);
@@ -465,8 +461,9 @@ function geneticAlgorithm(points) {
         }));
     p.then(() => new Promise(() => {
         console.timeEnd('GA');
-        console.log(`Best path: ${globalMin}`);
+        console.log(getDistanceSum(globalMin));
     }));
+    return p;
 }
 
 let code = 'ch130';
@@ -487,6 +484,9 @@ $(() => {
             $.get(`http:/sgly.tk/tsp/${code}`, (v) => {
                 let data = JSON.parse(v);
                 answer = data.answer;
+                console.log(value);
+                if (value === 'kroA200')
+                    answer = 29368;
                 points = data.points;
                 addPoints(data.points);
                 calcDistanceBuffer();
